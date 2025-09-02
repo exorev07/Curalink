@@ -1,39 +1,7 @@
 import React from 'react';
+import { getStatusBadgeColor, getStatusLabel, formatTimestamp } from '../utils/bedUtils';
 
 const HistoryTable = ({ historyData }) => {
-  const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
-  };
-
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case 'unoccupied':
-        return 'bg-green-100 text-green-800';
-      case 'occupied':
-        return 'bg-red-100 text-red-800';
-      case 'occupied-cleaning':
-        return 'bg-orange-100 text-orange-800';
-      case 'unoccupied-cleaning':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'unoccupied':
-        return 'Unoccupied';
-      case 'occupied':
-        return 'Occupied';
-      case 'occupied-cleaning':
-        return 'Occupied + Cleaning';
-      case 'unoccupied-cleaning':
-        return 'Unoccupied + Cleaning';
-      default:
-        return 'Unknown';
-    }
-  };
 
   // Sort history by timestamp (newest first)
   const sortedHistory = [...historyData].sort((a, b) => 
@@ -82,7 +50,7 @@ const HistoryTable = ({ historyData }) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(entry.status)}`}>
-                      {getStatusText(entry.status)}
+                      {getStatusLabel(entry.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

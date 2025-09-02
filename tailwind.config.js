@@ -10,7 +10,7 @@ export default {
         'bed-unoccupied': '#10B981', // Green
         'bed-occupied': '#EF4444',   // Red
         'bed-occupied-cleaning': '#F97316', // Orange
-        'bed-unoccupied-cleaning': '#8B5CF6', // Purple
+        'bed-unoccupied-cleaning': '#F59E0B', // Yellow
       }
     },
   },

@@ -25,7 +25,7 @@ export const STATUS_BADGE_COLORS = {
   [BED_STATUSES.UNOCCUPIED]: 'bg-green-100 text-green-800',
   [BED_STATUSES.OCCUPIED]: 'bg-red-100 text-red-800',
   [BED_STATUSES.OCCUPIED_CLEANING]: 'bg-orange-100 text-orange-800',
-  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'bg-purple-100 text-purple-800'
+  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'bg-yellow-100 text-yellow-800'
 };
 
 /**
