@@ -28,7 +28,13 @@ A modern React-based dashboard for managing hospital bed occupancy with real-tim
 - 🟠 **Occupied + Cleaning** - Bed is occupied and requires cleaning
 - 🟣 **Unoccupied + Cleaning** - Bed is empty but needs cleaning
 
-## 🚀 Getting Started
+## � Documentation
+
+- **[🤝 Collaboration Guide](docs/COLLABORATION.md)** - Team workflow and setup
+- **[🛠️ Development Guide](docs/DEVELOPMENT.md)** - Development workflow and guidelines  
+- **[🚀 Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment instructions
+
+## �🚀 Getting Started
 
 ### Prerequisites
 

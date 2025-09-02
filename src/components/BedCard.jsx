@@ -1,53 +1,19 @@
 import React from 'react';
+import { BED_STATUSES, getStatusColor, getStatusLabel } from '../utils/bedUtils';
 
 const BedCard = ({ bedId, bedData, onStatusChange }) => {
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'unoccupied':
-        return 'bg-bed-unoccupied';
-      case 'occupied':
-        return 'bg-bed-occupied';
-      case 'occupied-cleaning':
-        return 'bg-bed-occupied-cleaning';
-      case 'unoccupied-cleaning':
-        return 'bg-bed-unoccupied-cleaning';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'unoccupied':
-        return 'Unoccupied';
-      case 'occupied':
-        return 'Occupied';
-      case 'occupied-cleaning':
-        return 'Occupied + Cleaning';
-      case 'unoccupied-cleaning':
-        return 'Unoccupied + Cleaning';
-      default:
-        return 'Unknown';
-    }
-  };
-
   const formatTimestamp = (timestamp) => {
     return new Date(timestamp).toLocaleString();
   };
 
-  const statusOptions = [
-    'unoccupied',
-    'occupied',
-    'occupied-cleaning',
-    'unoccupied-cleaning'
-  ];
+  const statusOptions = Object.values(BED_STATUSES);
 
   return (
     <div className={`${getStatusColor(bedData.status)} rounded-lg shadow-lg p-6 text-white transition-all hover:shadow-xl`}>
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-xl font-bold">{bedId.toUpperCase()}</h3>
         <span className="text-sm bg-white bg-opacity-20 px-2 py-1 rounded">
-          {getStatusText(bedData.status)}
+          {getStatusLabel(bedData.status)}
         </span>
       </div>
       
@@ -79,7 +45,7 @@ const BedCard = ({ bedId, bedData, onStatusChange }) => {
         >
           {statusOptions.map(status => (
             <option key={status} value={status} className="text-gray-800">
-              {getStatusText(status)}
+              {getStatusLabel(status)}
             </option>
           ))}
         </select>
