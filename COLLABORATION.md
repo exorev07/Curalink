@@ -1,12 +1,26 @@
-# 🤝 Collaboration Guide
+## 🎯 **Repository Information**
+
+- **GitHub Repository:** https://github.com/exorev07/Hospital-Bed-management-System
+- **Owner:** exorev07 (ekansharohi1305@gmail.com)
+- **Clone URL:** `git clone https://github.com/exorev07/Hospital-Bed-management-System.git`
+
+## 👥 **Adding Collaborators**
+
+1. Go to: https://github.com/exorev07/Hospital-Bed-management-System/settings/access
+2. Click **"Add people"**
+3. Enter your teammate's GitHub username or email
+4. Select **"Write"** permission level
+5. Send invitation
+
+## 🤝 Collaboration Guide
 
 ## Getting Started for Your Teammate
 
 ### 1. **Clone the Repository**
-After you push to GitHub, your teammate can clone:
+Your teammate can clone the repository with:
 ```bash
-git clone <your-github-repo-url>
-cd bed-occupancy-management
+git clone https://github.com/exorev07/Hospital-Bed-management-System.git
+cd Hospital-Bed-management-System
 ```
 
 ### 2. **Install Dependencies**
