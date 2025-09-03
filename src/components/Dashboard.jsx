@@ -4,6 +4,7 @@ import { database, isDemoMode } from '../firebase/config';
 import { seedDummyData, addHistoryEntry } from '../firebase/seedData';
 import BedCard from './BedCard';
 import HistoryTable from './HistoryTable';
+import { getEffectiveBedStatus, checkAndUnassignExpiredPatients } from '../firebase/bedManager';
 
 const Dashboard = () => {
   const [beds, setBeds] = useState({});
@@ -11,6 +12,7 @@ const Dashboard = () => {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [showSeedButton, setShowSeedButton] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // For triggering re-renders
 
   // Demo data for when Firebase is not configured
   const demoData = {
@@ -107,11 +109,13 @@ const Dashboard = () => {
     });
 
     // Listen for history data
-    const historyRef = ref(database, 'history');
+    const historyRef = ref(database, 'bedHistory');
     const unsubscribeHistory = onValue(historyRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const historyArray = Object.values(data);
+        const historyArray = Object.values(data).sort((a, b) => 
+          new Date(b.timestamp) - new Date(a.timestamp)
+        );
         setHistory(historyArray);
       } else {
         setHistory([]);
@@ -127,52 +131,39 @@ const Dashboard = () => {
     };
   }, []);
 
-  const handleStatusChange = async (bedId, newStatus) => {
-    if (isDemoMode || !database) {
-      // Update local state in demo mode
-      const updatedBed = {
-        ...beds[bedId],
-        status: newStatus,
-        lastUpdate: new Date().toISOString()
-      };
-      
-      setBeds(prev => ({
-        ...prev,
-        [bedId]: updatedBed
-      }));
-      
-      // Add to local history
-      const newHistoryEntry = {
-        bedId,
-        status: newStatus,
-        assignedNurse: updatedBed.assignedNurse,
-        cleaningStaff: updatedBed.cleaningStaff,
-        timestamp: new Date().toISOString()
-      };
-      
-      setHistory(prev => [newHistoryEntry, ...prev]);
-      return;
-    }
+  // Timer to check for expired patient assignments every minute
+  useEffect(() => {
+    const checkExpiredAssignments = async () => {
+      if (Object.keys(beds).length > 0) {
+        await checkAndUnassignExpiredPatients(beds, updateLocalHistory, setBeds);
+      }
+    };
 
-    try {
-      const bedRef = ref(database, `beds/${bedId}`);
-      const updatedBed = {
-        ...beds[bedId],
-        status: newStatus,
-        lastUpdate: new Date().toISOString()
-      };
-      
-      await set(bedRef, updatedBed);
-      
-      // Add to history
-      await addHistoryEntry(
-        bedId, 
-        newStatus, 
-        updatedBed.assignedNurse, 
-        updatedBed.cleaningStaff
-      );
-    } catch (error) {
-      console.error('Error updating bed status:', error);
+    // Check immediately
+    checkExpiredAssignments();
+
+    // Set up interval to check every minute
+    const interval = setInterval(checkExpiredAssignments, 60000);
+
+    return () => clearInterval(interval);
+  }, [beds]); // Re-run when beds data changes
+
+  // Function to trigger data refresh after bed operations
+  const handleBedUpdate = () => {
+    setRefreshKey(prev => prev + 1);
+    
+    // In demo mode, we might need to manually refresh data
+    if (isDemoMode || !database) {
+      // Force a re-render to show updated states
+      // In a real implementation, this would trigger a Firebase refresh
+      console.log('Bed update triggered in demo mode');
+    }
+  };
+
+  // Function to update local history in demo mode
+  const updateLocalHistory = (historyEntry) => {
+    if (isDemoMode || !database) {
+      setHistory(prev => [historyEntry, ...prev]);
     }
   };
 
@@ -217,17 +208,26 @@ const Dashboard = () => {
       total: Object.keys(beds).length,
       occupied: 0,
       unoccupied: 0,
-      cleaning: 0
+      cleaning: 0,
+      overridden: 0
     };
 
     Object.values(beds).forEach(bed => {
-      if (bed.status === 'occupied' || bed.status === 'occupied-cleaning') {
+      const effectiveStatus = getEffectiveBedStatus(bed);
+      
+      // Count overrides
+      if (bed.override && bed.override.active) {
+        counts.overridden++;
+      }
+      
+      // Count by effective status
+      if (effectiveStatus === 'occupied' || effectiveStatus === 'occupied-cleaning') {
         counts.occupied++;
       }
-      if (bed.status === 'unoccupied' || bed.status === 'unoccupied-cleaning') {
+      if (effectiveStatus === 'unoccupied' || effectiveStatus === 'unoccupied-cleaning') {
         counts.unoccupied++;
       }
-      if (bed.status === 'occupied-cleaning' || bed.status === 'unoccupied-cleaning') {
+      if (effectiveStatus === 'occupied-cleaning' || effectiveStatus === 'unoccupied-cleaning') {
         counts.cleaning++;
       }
     });
@@ -288,7 +288,7 @@ const Dashboard = () => {
         )}
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="text-2xl font-bold text-gray-900">{statusCounts.total}</div>
             <div className="text-gray-600">Total Beds</div>
@@ -304,6 +304,28 @@ const Dashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="text-2xl font-bold text-orange-600">{statusCounts.cleaning}</div>
             <div className="text-gray-600">Cleaning</div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="text-2xl font-bold text-yellow-600">{statusCounts.overridden}</div>
+            <div className="text-gray-600">Overridden</div>
+          </div>
+        </div>
+
+        {/* System Information */}
+        <div className="mb-8 bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">🏥</span>
+              </div>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">Hardware-Integrated Status</h3>
+              <p className="text-sm text-green-700">
+                Bed statuses are automatically updated by ESP8266 hardware sensors. 
+                Use "Assign Patient" and "Supervisor Override" for manual management.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -338,10 +360,13 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Object.entries(filteredBeds).map(([bedId, bedData]) => (
                 <BedCard
-                  key={bedId}
+                  key={`${bedId}-${refreshKey}`}
                   bedId={bedId}
                   bedData={bedData}
-                  onStatusChange={handleStatusChange}
+                  onUpdate={handleBedUpdate}
+                  updateLocalHistory={updateLocalHistory}
+                  updateBedsData={setBeds}
+                  allBeds={beds}
                 />
               ))}
             </div>

@@ -106,3 +106,27 @@ export const filterBeds = (beds, filter) => {
     })
   );
 };
+
+/**
+ * Get the effective status of a bed (considering overrides)
+ * @param {Object} bedData - The bed data object
+ * @returns {string} The effective status
+ */
+export const getEffectiveBedStatus = (bedData) => {
+  // If there's an active override, use that status
+  if (bedData.override && bedData.override.active) {
+    return bedData.override.status;
+  }
+  
+  // Otherwise use the hardware-reported status
+  return bedData.status || 'unknown';
+};
+
+/**
+ * Check if a bed has an active patient assignment
+ * @param {Object} bedData - The bed data object
+ * @returns {boolean} True if bed has active patient assignment
+ */
+export const hasActivePatientAssignment = (bedData) => {
+  return bedData.assignment && bedData.assignment.status === 'active';
+};

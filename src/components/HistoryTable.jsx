@@ -3,10 +3,69 @@ import { getStatusBadgeColor, getStatusLabel, formatTimestamp } from '../utils/b
 
 const HistoryTable = ({ historyData }) => {
 
-  // Sort history by timestamp (newest first)
-  const sortedHistory = [...historyData].sort((a, b) => 
-    new Date(b.timestamp) - new Date(a.timestamp)
-  );
+  // Helper function to format action display
+  const getActionDisplay = (entry) => {
+    if (entry.action) {
+      // New format with action and data
+      switch (entry.action) {
+        case 'patient_assigned':
+          const assignedPatientName = entry.data?.patientName || 'Unknown Patient';
+          const assignedPatientId = entry.data?.patientId;
+          const assignedDetails = assignedPatientId ? `${assignedPatientName} (${assignedPatientId})` : assignedPatientName;
+          return {
+            label: 'Patient Assigned',
+            color: 'bg-blue-100 text-blue-800',
+            details: assignedDetails
+          };
+        case 'patient_unassigned':
+          const reasonText = entry.data?.reason === 'assignment_expired' ? 'Timer Expired' : 'Manual Unassignment';
+          const unassignedPatientName = entry.data?.patientInfo?.patientName || 'Unknown Patient';
+          const unassignedPatientId = entry.data?.patientInfo?.patientId;
+          const unassignedDetails = unassignedPatientId ? `${unassignedPatientName} (${unassignedPatientId})` : unassignedPatientName;
+          return {
+            label: reasonText,
+            color: entry.data?.reason === 'assignment_expired' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800',
+            details: unassignedDetails
+          };
+        case 'supervisor_override':
+          return {
+            label: 'Supervisor Override',
+            color: 'bg-purple-100 text-purple-800',
+            details: `${entry.data?.previousStatus || 'Unknown'} → ${entry.data?.newStatus || 'Unknown'}`
+          };
+        case 'assignment_expired':
+          const expiredPatientName = entry.data?.patientName || 'Unknown Patient';
+          const expiredPatientId = entry.data?.patientId;
+          const expiredDetails = expiredPatientId ? `${expiredPatientName} (${expiredPatientId}) - Auto-unassigned` : `${expiredPatientName} - Auto-unassigned`;
+          return {
+            label: 'Assignment Expired',
+            color: 'bg-red-100 text-red-800',
+            details: expiredDetails
+          };
+        case 'override_cleared':
+          return {
+            label: 'Override Cleared',
+            color: 'bg-green-100 text-green-800',
+            details: entry.data?.clearedBy || 'System'
+          };
+        default:
+          return {
+            label: entry.action.replace('_', ' ').toUpperCase(),
+            color: 'bg-gray-100 text-gray-800',
+            details: ''
+          };
+      }
+    } else {
+      // Skip legacy status-based entries to keep history clean
+      return null;
+    }
+  };
+
+  // Sort history by timestamp (newest first) and filter out legacy entries
+  const sortedHistory = [...historyData]
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .map(entry => ({ entry, actionDisplay: getActionDisplay(entry) }))
+    .filter(({ actionDisplay }) => actionDisplay !== null);
 
   return (
     <div className="bg-white shadow-lg rounded-lg">
@@ -22,13 +81,13 @@ const HistoryTable = ({ historyData }) => {
                 Bed ID
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                Action
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nurse
+                Details
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Cleaning Staff
+                Staff
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Timestamp
@@ -43,21 +102,21 @@ const HistoryTable = ({ historyData }) => {
                 </td>
               </tr>
             ) : (
-              sortedHistory.map((entry, index) => (
+              sortedHistory.map(({ entry, actionDisplay }, index) => (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {entry.bedId?.toUpperCase()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(entry.status)}`}>
-                      {getStatusLabel(entry.status)}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${actionDisplay.color}`}>
+                      {actionDisplay.label}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {entry.assignedNurse || '-'}
+                    {actionDisplay.details || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {entry.cleaningStaff || '-'}
+                    {entry.data?.assignedBy || entry.data?.supervisorName || entry.assignedNurse || entry.cleaningStaff || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatTimestamp(entry.timestamp)}

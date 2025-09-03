@@ -1,56 +1,398 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BED_STATUSES, getStatusColor, getStatusLabel } from '../utils/bedUtils';
+import { 
+  assignPatientToBed, 
+  unassignPatientFromBed, 
+  supervisorOverrideBedStatus,
+  getEffectiveBedStatus,
+  hasActivePatientAssignment,
+  isPatientAssignmentExpired,
+  getRemainingAssignmentTime
+} from '../firebase/bedManager';
 
-const BedCard = ({ bedId, bedData, onStatusChange }) => {
+const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData, allBeds }) => {
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showOverrideModal, setShowOverrideModal] = useState(false);
+  const [patientId, setPatientId] = useState('');
+  const [patientName, setPatientName] = useState('');
+  const [supervisorId, setSupervisorId] = useState('');
+  const [supervisorName, setSupervisorName] = useState('');
+  const [overrideReason, setOverrideReason] = useState('');
+  const [selectedOverrideStatus, setSelectedOverrideStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [remainingTime, setRemainingTime] = useState(0);
+  const [isExpired, setIsExpired] = useState(false);
+
   const formatTimestamp = (timestamp) => {
     return new Date(timestamp).toLocaleString();
   };
 
-  const statusOptions = Object.values(BED_STATUSES);
+  const effectiveStatus = getEffectiveBedStatus(bedData);
+  const hasPatient = hasActivePatientAssignment(bedData);
+  const hasOverride = bedData.override && bedData.override.active;
+
+  // Update timer every minute
+  useEffect(() => {
+    if (hasPatient && effectiveStatus === BED_STATUSES.UNOCCUPIED) {
+      const updateTimer = () => {
+        const remaining = getRemainingAssignmentTime(bedData);
+        setRemainingTime(remaining);
+        setIsExpired(isPatientAssignmentExpired(bedData));
+      };
+
+      updateTimer(); // Initial update
+      const interval = setInterval(updateTimer, 60000); // Update every minute
+
+      return () => clearInterval(interval);
+    } else {
+      setRemainingTime(0);
+      setIsExpired(false);
+    }
+  }, [hasPatient, effectiveStatus, bedData]);
+
+  const formatRemainingTime = (minutes) => {
+    if (minutes <= 0) return 'Expired';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  const handleAssignPatient = async () => {
+    if (!patientId.trim() || !patientName.trim()) {
+      alert('Please enter both Patient ID and Patient Name');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await assignPatientToBed(bedId, {
+        patientId: patientId.trim(),
+        patientName: patientName.trim(),
+        assignedBy: 'current_user' // Replace with actual user ID
+      }, updateLocalHistory, updateBedsData);
+      
+      setShowAssignModal(false);
+      setPatientId('');
+      setPatientName('');
+      onUpdate && onUpdate();
+    } catch (error) {
+      alert('Error assigning patient: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnassignPatient = async () => {
+    const confirmed = window.confirm('Are you sure you want to unassign the patient from this bed?');
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      await unassignPatientFromBed(bedId, 'current_user', 'manual', updateLocalHistory, updateBedsData, allBeds); // Replace with actual user ID
+      onUpdate && onUpdate();
+    } catch (error) {
+      alert('Error unassigning patient: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSupervisorOverride = async () => {
+    if (!supervisorId.trim() || !supervisorName.trim() || !selectedOverrideStatus || !overrideReason.trim()) {
+      alert('Please fill in all fields for the supervisor override');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to override bed ${bedId} status from "${getStatusLabel(effectiveStatus)}" to "${getStatusLabel(selectedOverrideStatus)}"?\n\nThis action will be logged for audit purposes.`
+    );
+    
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      await supervisorOverrideBedStatus(bedId, selectedOverrideStatus, {
+        supervisorId: supervisorId.trim(),
+        supervisorName: supervisorName.trim(),
+        previousStatus: effectiveStatus,
+        reason: overrideReason.trim()
+      }, updateLocalHistory);
+      
+      setShowOverrideModal(false);
+      setSupervisorId('');
+      setSupervisorName('');
+      setOverrideReason('');
+      setSelectedOverrideStatus('');
+      onUpdate && onUpdate();
+    } catch (error) {
+      alert('Error applying supervisor override: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className={`${getStatusColor(bedData.status)} rounded-lg shadow-lg p-6 text-white transition-all hover:shadow-xl`}>
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="text-xl font-bold">{bedId.toUpperCase()}</h3>
-        <span className="text-sm bg-white bg-opacity-20 px-2 py-1 rounded">
-          {getStatusLabel(bedData.status)}
-        </span>
-      </div>
-      
-      <div className="space-y-2 text-sm">
-        <div>
-          <strong>Last Updated:</strong>
-          <br />
-          {formatTimestamp(bedData.lastUpdate)}
+    <>
+      <div className={`${getStatusColor(effectiveStatus)} rounded-lg shadow-lg p-6 text-white transition-all hover:shadow-xl relative flex flex-col h-full`}>
+        {/* Override indicator */}
+        {hasOverride && (
+          <div className="absolute top-2 right-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded">
+            OVERRIDE
+          </div>
+        )}
+        
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold">{bedId.toUpperCase()}</h3>
+          <span className="text-sm bg-white bg-opacity-20 px-2 py-1 rounded">
+            {getStatusLabel(effectiveStatus)}
+          </span>
         </div>
         
-        {bedData.assignedNurse && (
+        <div className="space-y-2 text-sm flex-grow">
           <div>
-            <strong>Nurse:</strong> {bedData.assignedNurse}
+            <strong>Last Updated:</strong>
+            <br />
+            {formatTimestamp(bedData.lastUpdate)}
           </div>
-        )}
-        
-        {bedData.cleaningStaff && (
-          <div>
-            <strong>Cleaning Staff:</strong> {bedData.cleaningStaff}
+
+          {/* Patient Assignment Info */}
+          {hasPatient && (
+            <div className="bg-white bg-opacity-20 p-2 rounded">
+              <strong>Assigned Patient:</strong>
+              <br />
+              ID: {bedData.assignment.patientId}
+              <br />
+              Name: {bedData.assignment.patientName}
+              <br />
+              Assigned: {formatTimestamp(bedData.assignment.assignedAt)}
+              
+              {/* Timer display for unoccupied beds with patient assignments */}
+              {effectiveStatus === BED_STATUSES.UNOCCUPIED && (
+                <div className={`mt-2 p-2 rounded text-sm ${isExpired ? 'bg-red-500 text-white' : remainingTime <= 5 ? 'bg-yellow-500 text-black' : 'text-gray-800'}`}
+                     style={!isExpired && remainingTime > 5 ? { backgroundColor: '#e0dcfc' } : {}}>
+                  {isExpired ? (
+                    <>
+                      ⚠️ <strong>EXPIRED:</strong> Patient did not arrive
+                    </>
+                  ) : (
+                    <>
+                      ⏱️ <strong>Time remaining:</strong> {formatRemainingTime(remainingTime)}
+                      {remainingTime <= 5 && (
+                        <div className="text-xs mt-1">
+                          Patient should arrive soon!
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Override Info */}
+          {hasOverride && (
+            <div className="bg-yellow-200 bg-opacity-30 p-2 rounded text-yellow-100">
+              <strong>Override Active:</strong>
+              <br />
+              By: {bedData.override.supervisorName}
+              <br />
+              Reason: {bedData.override.reason}
+            </div>
+          )}
+          
+          {bedData.assignedNurse && (
+            <div>
+              <strong>Nurse:</strong> {bedData.assignedNurse}
+            </div>
+          )}
+          
+          {bedData.cleaningStaff && (
+            <div>
+              <strong>Cleaning Staff:</strong> {bedData.cleaningStaff}
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-auto pt-4 space-y-2">
+          {/* Patient Management */}
+          <div className="flex gap-2">
+            {!hasPatient && effectiveStatus === BED_STATUSES.UNOCCUPIED ? (
+              <button
+                onClick={() => setShowAssignModal(true)}
+                disabled={loading}
+                className="flex-1 bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded text-sm font-medium disabled:opacity-50"
+              >
+                Assign Patient
+              </button>
+            ) : hasPatient ? (
+              <button
+                onClick={handleUnassignPatient}
+                disabled={loading}
+                className="flex-1 bg-red-500 bg-opacity-80 hover:bg-opacity-100 px-3 py-2 rounded text-sm font-medium disabled:opacity-50"
+              >
+                Unassign Patient
+              </button>
+            ) : (
+              <div className="flex-1 bg-gray-500 bg-opacity-50 px-3 py-2 rounded text-sm font-medium text-center cursor-not-allowed">
+                Bed Unavailable
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Supervisor Override */}
+          <button
+            onClick={() => setShowOverrideModal(true)}
+            disabled={loading}
+            className="w-full px-3 py-2 rounded text-sm font-medium disabled:opacity-50 text-gray-800 hover:text-gray-900"
+            style={{ 
+              backgroundColor: '#f7f2d2',
+              ':hover': { backgroundColor: '#ede8c0' }
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#ede8c0'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#f7f2d2'}
+          >
+            Supervisor Override
+          </button>
+        </div>
       </div>
 
-      <div className="mt-4">
-        <select
-          value={bedData.status}
-          onChange={(e) => onStatusChange(bedId, e.target.value)}
-          className="w-full bg-white bg-opacity-20 text-white border border-white border-opacity-30 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
-        >
-          {statusOptions.map(status => (
-            <option key={status} value={status} className="text-gray-800">
-              {getStatusLabel(status)}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
+      {/* Patient Assignment Modal */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Assign Patient to {bedId.toUpperCase()}</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Patient ID</label>
+                <input
+                  type="text"
+                  value={patientId}
+                  onChange={(e) => setPatientId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter patient ID"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Patient Name</label>
+                <input
+                  type="text"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter patient name"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowAssignModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAssignPatient}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                {loading ? 'Assigning...' : 'Assign Patient'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supervisor Override Modal */}
+      {showOverrideModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Supervisor Override - {bedId.toUpperCase()}</h3>
+            
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                <strong>Current Status:</strong> {getStatusLabel(effectiveStatus)}
+                <br />
+                This override will be logged for audit purposes.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor ID</label>
+                <input
+                  type="text"
+                  value={supervisorId}
+                  onChange={(e) => setSupervisorId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter supervisor ID"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor Name</label>
+                <input
+                  type="text"
+                  value={supervisorName}
+                  onChange={(e) => setSupervisorName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter supervisor name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                <select
+                  value={selectedOverrideStatus}
+                  onChange={(e) => setSelectedOverrideStatus(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select new status</option>
+                  {Object.values(BED_STATUSES).map(status => (
+                    <option key={status} value={status}>
+                      {getStatusLabel(status)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Override</label>
+                <textarea
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                  placeholder="Explain why this override is necessary..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowOverrideModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSupervisorOverride}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {loading ? 'Applying...' : 'Apply Override'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
