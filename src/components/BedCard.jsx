@@ -22,9 +22,19 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
   const [loading, setLoading] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
+  const [patientIdError, setPatientIdError] = useState('');
 
   const formatTimestamp = (timestamp) => {
     return new Date(timestamp).toLocaleString();
+  };
+
+  const handlePatientIdChange = (e) => {
+    const value = e.target.value;
+    // Only allow digits and limit to 6 characters
+    if (/^\d{0,6}$/.test(value)) {
+      setPatientId(value);
+      setPatientIdError(''); // Clear error when user types valid input
+    }
   };
 
   const effectiveStatus = getEffectiveBedStatus(bedData);
@@ -61,15 +71,24 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
   };
 
   const handleAssignPatient = async () => {
-    if (!patientId.trim() || !patientName.trim()) {
+    // Validate patient ID is exactly 6 digits
+    const patientIdTrimmed = patientId.trim();
+    if (!patientIdTrimmed || !patientName.trim()) {
       alert('Please enter both Patient ID and Patient Name');
       return;
     }
 
+    // Check if patient ID is exactly 6 digits
+    if (!/^\d{6}$/.test(patientIdTrimmed)) {
+      setPatientIdError('Patient ID must be exactly 6 digits');
+      return;
+    }
+
+    setPatientIdError(''); // Clear error if validation passes
     setLoading(true);
     try {
       await assignPatientToBed(bedId, {
-        patientId: patientId.trim(),
+        patientId: patientIdTrimmed,
         patientName: patientName.trim(),
         assignedBy: 'current_user' // Replace with actual user ID
       }, updateLocalHistory, updateBedsData);
@@ -77,6 +96,7 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
       setShowAssignModal(false);
       setPatientId('');
       setPatientName('');
+      setPatientIdError('');
       onUpdate && onUpdate();
     } catch (error) {
       alert('Error assigning patient: ' + error.message);
@@ -272,10 +292,19 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
                 <input
                   type="text"
                   value={patientId}
-                  onChange={(e) => setPatientId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter patient ID"
+                  onChange={handlePatientIdChange}
+                  className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 ${
+                    patientIdError 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
+                  placeholder="Enter 6-digit patient ID"
+                  maxLength="6"
                 />
+                {patientIdError && (
+                  <p className="mt-1 text-sm text-red-600">{patientIdError}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">Must be exactly 6 digits</p>
               </div>
               
               <div>
