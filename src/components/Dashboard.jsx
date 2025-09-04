@@ -5,7 +5,7 @@ import { seedDummyData, addHistoryEntry } from '../firebase/seedData';
 import BedCard from './BedCard';
 import HistoryTable from './HistoryTable';
 import { getEffectiveBedStatus, checkAndUnassignExpiredPatients } from '../firebase/bedManager';
-import { BED_STATUSES } from '../utils/bedUtils';
+import { BED_STATUSES, WARD_TYPES, WARD_COLORS } from '../utils/bedUtils';
 
 const Dashboard = () => {
   const [beds, setBeds] = useState({});
@@ -20,36 +20,42 @@ const Dashboard = () => {
     beds: {
       bed1: {
         status: 'unoccupied',
+        ward: 'ICU',
         lastUpdate: '2025-09-02T14:00:00',
         assignedNurse: '',
         cleaningStaff: ''
       },
       bed2: {
         status: 'occupied',
+        ward: 'ICU',
         lastUpdate: '2025-09-02T13:30:00',
         assignedNurse: 'NURSE45',
         cleaningStaff: ''
       },
       bed3: {
         status: 'occupied-cleaning',
+        ward: 'Maternity',
         lastUpdate: '2025-09-02T12:45:00',
         assignedNurse: 'NURSE23',
         cleaningStaff: 'CLEAN01'
       },
       bed4: {
         status: 'unoccupied-cleaning',
+        ward: 'Maternity',
         lastUpdate: '2025-09-02T11:15:00',
         assignedNurse: '',
         cleaningStaff: 'CLEAN02'
       },
       bed5: {
         status: 'occupied',
+        ward: 'General',
         lastUpdate: '2025-09-02T10:30:00',
         assignedNurse: 'NURSE67',
         cleaningStaff: ''
       },
       bed6: {
         status: 'unoccupied',
+        ward: 'General',
         lastUpdate: '2025-09-02T09:45:00',
         assignedNurse: '',
         cleaningStaff: ''
@@ -191,6 +197,7 @@ const Dashboard = () => {
     return Object.fromEntries(
       Object.entries(beds).filter(([bedId, bedData]) => {
         const effectiveStatus = getEffectiveBedStatus(bedData);
+        const bedWard = bedData.ward || 'General';
         
         switch (filter) {
           case 'available':
@@ -202,11 +209,29 @@ const Dashboard = () => {
             return bedData.status === 'unoccupied' || bedData.status === 'unoccupied-cleaning';
           case 'cleaning':
             return bedData.status === 'occupied-cleaning' || bedData.status === 'unoccupied-cleaning';
+          case 'ward-icu':
+            return bedWard === 'ICU';
+          case 'ward-maternity':
+            return bedWard === 'Maternity';
+          case 'ward-general':
+            return bedWard === 'General';
           default:
             return true;
         }
       })
     );
+  };
+
+  const groupBedsByWard = (bedsData) => {
+    const grouped = {};
+    Object.entries(bedsData).forEach(([bedId, bedData]) => {
+      const ward = bedData.ward || 'General'; // Default to General if no ward specified
+      if (!grouped[ward]) {
+        grouped[ward] = {};
+      }
+      grouped[ward][bedId] = bedData;
+    });
+    return grouped;
   };
 
   const getStatusCounts = () => {
@@ -352,11 +377,16 @@ const Dashboard = () => {
               <option value="available">Available</option>
               <option value="unoccupied">Unoccupied</option>
               <option value="cleaning">Cleaning</option>
+              <optgroup label="By Ward">
+                <option value="ward-icu">ICU Ward</option>
+                <option value="ward-maternity">Maternity Ward</option>
+                <option value="ward-general">General Ward</option>
+              </optgroup>
             </select>
           </div>
         </div>
 
-        {/* Beds Grid */}
+        {/* Beds Grid - Grouped by Ward */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Bed Status Overview</h2>
           {Object.keys(filteredBeds).length === 0 ? (
@@ -364,17 +394,31 @@ const Dashboard = () => {
               <p className="text-gray-500">No beds match the current filter.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Object.entries(filteredBeds).map(([bedId, bedData]) => (
-                <BedCard
-                  key={`${bedId}-${refreshKey}`}
-                  bedId={bedId}
-                  bedData={bedData}
-                  onUpdate={handleBedUpdate}
-                  updateLocalHistory={updateLocalHistory}
-                  updateBedsData={setBeds}
-                  allBeds={beds}
-                />
+            <div className="space-y-8">
+              {Object.entries(groupBedsByWard(filteredBeds)).map(([ward, wardBeds]) => (
+                <div key={ward} className={`rounded-lg border-2 p-6 ${WARD_COLORS[ward] || WARD_COLORS[WARD_TYPES.GENERAL]}`}>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span className="inline-block w-3 h-3 rounded-full mr-3" 
+                          style={{ backgroundColor: ward === 'ICU' ? '#ef4444' : ward === 'Maternity' ? '#ec4899' : '#3b82f6' }}></span>
+                    {ward} Ward
+                    <span className="ml-2 text-sm font-normal text-gray-600">
+                      ({Object.keys(wardBeds).length} bed{Object.keys(wardBeds).length !== 1 ? 's' : ''})
+                    </span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {Object.entries(wardBeds).map(([bedId, bedData]) => (
+                      <BedCard
+                        key={`${bedId}-${refreshKey}`}
+                        bedId={bedId}
+                        bedData={bedData}
+                        onUpdate={handleBedUpdate}
+                        updateLocalHistory={updateLocalHistory}
+                        updateBedsData={setBeds}
+                        allBeds={beds}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}

@@ -7,6 +7,18 @@ export const BED_STATUSES = {
   UNOCCUPIED_CLEANING: 'unoccupied-cleaning'
 };
 
+export const WARD_TYPES = {
+  ICU: 'ICU',
+  MATERNITY: 'Maternity',
+  GENERAL: 'General'
+};
+
+export const WARD_COLORS = {
+  [WARD_TYPES.ICU]: 'bg-red-50 border-red-200',
+  [WARD_TYPES.MATERNITY]: 'bg-pink-50 border-pink-200',
+  [WARD_TYPES.GENERAL]: 'bg-blue-50 border-blue-200'
+};
+
 export const STATUS_COLORS = {
   [BED_STATUSES.UNOCCUPIED]: 'bg-bed-unoccupied',
   [BED_STATUSES.OCCUPIED]: 'bg-bed-occupied',

@@ -165,7 +165,12 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
         )}
         
         <div className="flex justify-between items-start mb-4">
-          <h3 className="text-xl font-bold">{bedId.toUpperCase()}</h3>
+          <div>
+            <h3 className="text-xl font-bold">{bedId.toUpperCase()}</h3>
+            <p className="text-xs text-white text-opacity-80 mt-1">
+              {bedData.ward || 'General'} Ward
+            </p>
+          </div>
           <span className="text-sm bg-white bg-opacity-20 px-2 py-1 rounded">
             {getStatusLabel(effectiveStatus)}
           </span>
