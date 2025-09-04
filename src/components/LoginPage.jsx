@@ -49,20 +49,17 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8" style={{ backgroundColor: '#e9eae0' }}>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">🏥</h1>
-          <h2 className="text-3xl font-extrabold text-gray-900">
-            Hospital Bed Management
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h1 className="text-5xl font-extrabold mb-4 font-ranade tracking-tight" style={{ color: '#01796F' }}>CuraLink</h1>
+          <p className="mt-2 text-sm" style={{ color: '#01796F' }}>
             {isLogin ? 'Sign in to your account' : 'Create a new account'}
           </p>
           
           {isDemoMode && (
-            <div className="mt-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-              <p className="text-sm">
+            <div className="mt-4 border-2 px-4 py-3 rounded-lg" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
+              <p className="text-sm" style={{ color: '#01796F' }}>
                 <strong>Demo Mode:</strong> Firebase not configured. 
                 <br />Any email/password will work for testing.
               </p>
@@ -72,16 +69,16 @@ const LoginPage = () => {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border-2" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
           {error && (
-            <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <div className="mb-4 border-2 px-4 py-3 rounded-lg" style={{ backgroundColor: '#ffebee', borderColor: '#ffcdd2', color: '#c62828' }}>
               {error}
             </div>
           )}
           
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium" style={{ color: '#01796F' }}>
                 Email address
               </label>
               <div className="mt-1">
@@ -94,13 +91,18 @@ const LoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={isDemoMode ? "test@example.com (any email works)" : ""}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border-2 rounded-md font-ranade transition-colors duration-200"
+                  style={{ 
+                    backgroundColor: '#e9eae0',
+                    borderColor: '#9a9890',
+                    color: '#01796F'
+                  }}
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium" style={{ color: '#01796F' }}>
                 Password
               </label>
               <div className="mt-1">
@@ -113,7 +115,12 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={isDemoMode ? "password123 (any password works)" : ""}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border-2 rounded-md font-ranade transition-colors duration-200"
+                  style={{ 
+                    backgroundColor: '#e9eae0',
+                    borderColor: '#9a9890',
+                    color: '#01796F'
+                  }}
                 />
               </div>
             </div>
@@ -122,7 +129,13 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                className="w-full flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-200"
+                style={{ 
+                  backgroundColor: '#01796F',
+                  opacity: loading ? '0.5' : '1'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#015e57'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#01796F'}
               >
                 {loading ? 'Loading...' : (isLogin ? 'Sign in' : 'Sign up')}
               </button>
@@ -134,7 +147,8 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-blue-600 hover:text-blue-500 text-sm"
+                className="text-sm hover:opacity-80 transition-opacity duration-200"
+                style={{ color: '#01796F' }}
               >
                 {isLogin 
                   ? "Don't have an account? Sign up" 

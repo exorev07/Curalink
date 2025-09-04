@@ -397,7 +397,7 @@ const Dashboard = () => {
               <h3 className="text-sm font-medium" style={{ color: '#01796F' }}>Hardware-Integrated Status</h3>
               <p className="text-sm" style={{ color: '#01796F' }}>
                 Bed statuses are automatically updated by ESP8266 hardware sensors. 
-                Use "Assign Patient" and "Supervisor Override" for manual management.
+                Use <span className="font-bold">Assign Patient</span> and <span className="font-bold">Supervisor Override</span> for manual management.
               </p>
             </div>
           </div>
