@@ -4,6 +4,7 @@ import { database, isDemoMode } from '../firebase/config';
 import { seedDummyData, addHistoryEntry } from '../firebase/seedData';
 import BedCard from './BedCard';
 import HistoryTable from './HistoryTable';
+import PredictionBox from './PredictionBox';
 import { getEffectiveBedStatus, checkAndUnassignExpiredPatients } from '../firebase/bedManager';
 import { BED_STATUSES, WARD_TYPES, WARD_COLORS } from '../utils/bedUtils';
 
@@ -19,11 +20,15 @@ const filterOptions = [
   { value: 'ward-general', label: 'General Ward' }
 ];
 
-const Dashboard = () => {
+const Dashboard = ({ onNavigate }) => {
   const [beds, setBeds] = useState({});
   const [history, setHistory] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+
+  const handleNavigate = (page) => {
+    onNavigate(page);
+  };
   const [showSeedButton, setShowSeedButton] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // For triggering re-renders
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -336,7 +341,7 @@ const Dashboard = () => {
         )}
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
           <div className="p-6 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
             <div className="text-2xl font-bold text-gray-900">{statusCounts.total}</div>
             <div style={{ color: '#01796F' }}>Total Beds</div>
@@ -382,6 +387,9 @@ const Dashboard = () => {
           <div style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }} className="p-6 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2">
             <div className="text-2xl font-bold text-yellow-600">{statusCounts.overridden}</div>
             <div style={{ color: '#01796F' }}>Overridden</div>
+          </div>
+          <div className="md:col-span-1">
+            <PredictionBox onNavigateToAnalytics={() => handleNavigate('analytics')} />
           </div>
         </div>
 
