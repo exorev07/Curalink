@@ -1,3 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Ranade:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Apply Ranade font globally */
+@layer base {
+  html {
+    font-family: 'Ranade', sans-serif;
+  }
+  
+  body {
+    font-family: 'Ranade', sans-serif;
+  }
+
+  /* Ensure all text elements use Ranade */
+  h1, h2, h3, h4, h5, h6, p, span, div, button, input, select, textarea {
+    font-family: 'Ranade', sans-serif;
+  }
+}

@@ -20,10 +20,10 @@ export const WARD_COLORS = {
 };
 
 export const STATUS_COLORS = {
-  [BED_STATUSES.UNOCCUPIED]: 'bg-bed-unoccupied',
-  [BED_STATUSES.OCCUPIED]: 'bg-bed-occupied',
-  [BED_STATUSES.OCCUPIED_CLEANING]: 'bg-bed-occupied-cleaning',
-  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'bg-bed-unoccupied-cleaning'
+  [BED_STATUSES.UNOCCUPIED]: 'bg-[#2E8B57]',
+  [BED_STATUSES.OCCUPIED]: 'bg-red-600',
+  [BED_STATUSES.OCCUPIED_CLEANING]: 'bg-orange-500',
+  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'bg-yellow-500'
 };
 
 export const STATUS_LABELS = {

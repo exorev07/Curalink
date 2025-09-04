@@ -13,12 +13,12 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-blue-600 text-white shadow-lg">
+    <nav className="text-white shadow-lg" style={{ backgroundColor: '#01796F' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold">🏥 Bed Occupancy Management</h1>
+              <h1 className="text-xl font-bold font-ranade">CuraLink</h1>
             </div>
           </div>
           
@@ -30,7 +30,13 @@ const Navbar = () => {
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="bg-blue-700 hover:bg-blue-800 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  style={{ 
+                    backgroundColor: '#015e57',
+                    ':hover': { backgroundColor: '#014a45' }
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#014a45'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#015e57'}
                 >
                   Logout
                 </button>

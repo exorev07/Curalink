@@ -68,57 +68,57 @@ const HistoryTable = ({ historyData }) => {
     .filter(({ actionDisplay }) => actionDisplay !== null);
 
   return (
-    <div className="bg-white shadow-lg rounded-lg">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Recent Changes</h2>
+    <div className="shadow-lg rounded-lg" style={{ backgroundColor: '#c9c7c0' }}>
+      <div className="px-6 py-4 border-b border-black">
+        <h2 className="text-lg font-semibold" style={{ color: '#01796F' }}>Recent Changes</h2>
       </div>
       
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-black">
+          <thead style={{ backgroundColor: '#c9c7c0' }}>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#01796F' }}>
                 Bed ID
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#01796F' }}>
                 Action
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#01796F' }}>
                 Details
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#01796F' }}>
                 Staff
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: '#01796F' }}>
                 Timestamp
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody style={{ backgroundColor: '#c9c7c0' }} className="divide-y divide-black">
             {sortedHistory.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                <td colSpan="5" className="px-6 py-4 text-center" style={{ color: '#01796F' }}>
                   No history data available
                 </td>
               </tr>
             ) : (
               sortedHistory.map(({ entry, actionDisplay }, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={index} style={{ backgroundColor: '#c9c7c0' }} className="hover:bg-[#bab8b2] transition-colors duration-200">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" style={{ color: '#01796F' }}>
                     {entry.bedId?.toUpperCase()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${actionDisplay.color}`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full`} style={{ backgroundColor: '#01796F', color: 'white' }}>
                       {actionDisplay.label}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: '#01796F' }}>
                     {actionDisplay.details || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: '#01796F' }}>
                     {entry.data?.assignedBy || entry.data?.employeeId || entry.data?.supervisorName || entry.assignedNurse || entry.cleaningStaff || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: '#01796F' }}>
                     {formatTimestamp(entry.timestamp)}
                   </td>
                 </tr>
