@@ -121,16 +121,33 @@ export const unassignPatientFromBed = async (bedId, unassignedBy, reason = 'manu
 };
 
 // Supervisor override functions
-export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorData, updateLocalHistory = null) => {
+export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorData, updateLocalHistory = null, updateBedsData = null) => {
   if (isDemoMode || !database) {
     console.log('Demo mode: Would override bed status', bedId, newStatus, supervisorData);
+    
+    // In demo mode, update the local bed data if callback provided
+    if (updateBedsData) {
+      updateBedsData(prevBeds => ({
+        ...prevBeds,
+        [bedId]: {
+          ...prevBeds[bedId],
+          override: {
+            status: newStatus,
+            employeeId: supervisorData.employeeId,
+            previousStatus: supervisorData.previousStatus,
+            reason: supervisorData.reason,
+            timestamp: new Date().toISOString(),
+            active: true
+          }
+        }
+      }));
+    }
     
     // In demo mode, call the logging function with local history callback
     await logBedAction(bedId, 'supervisor_override', {
       newStatus,
       previousStatus: supervisorData.previousStatus,
-      supervisorId: supervisorData.supervisorId,
-      supervisorName: supervisorData.supervisorName,
+      employeeId: supervisorData.employeeId,
       reason: supervisorData.reason
     }, updateLocalHistory);
     return;
@@ -141,8 +158,7 @@ export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorDa
     const overrideRef = ref(database, `beds/${bedId}/override`);
     await set(overrideRef, {
       status: newStatus,
-      supervisorId: supervisorData.supervisorId,
-      supervisorName: supervisorData.supervisorName,
+      employeeId: supervisorData.employeeId,
       previousStatus: supervisorData.previousStatus,
       reason: supervisorData.reason,
       timestamp: serverTimestamp(),
@@ -155,8 +171,7 @@ export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorDa
       bedId,
       newStatus,
       previousStatus: supervisorData.previousStatus,
-      supervisorId: supervisorData.supervisorId,
-      supervisorName: supervisorData.supervisorName,
+      employeeId: supervisorData.employeeId,
       reason: supervisorData.reason,
       timestamp: serverTimestamp()
     });
@@ -165,7 +180,7 @@ export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorDa
     await logBedAction(bedId, 'supervisor_override', {
       newStatus,
       previousStatus: supervisorData.previousStatus,
-      supervisorId: supervisorData.supervisorId,
+      employeeId: supervisorData.employeeId,
       reason: supervisorData.reason
     });
   } catch (error) {

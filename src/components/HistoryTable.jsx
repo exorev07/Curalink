@@ -116,7 +116,7 @@ const HistoryTable = ({ historyData }) => {
                     {actionDisplay.details || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {entry.data?.assignedBy || entry.data?.supervisorName || entry.assignedNurse || entry.cleaningStaff || '-'}
+                    {entry.data?.assignedBy || entry.data?.employeeId || entry.data?.supervisorName || entry.assignedNurse || entry.cleaningStaff || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatTimestamp(entry.timestamp)}

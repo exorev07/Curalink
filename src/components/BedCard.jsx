@@ -23,6 +23,12 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
   const [remainingTime, setRemainingTime] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
   const [patientIdError, setPatientIdError] = useState('');
+  
+  // New state for supervisor authentication
+  const [employeeId, setEmployeeId] = useState('');
+  const [password, setPassword] = useState('');
+  const [employeeIdError, setEmployeeIdError] = useState('');
+  const [authError, setAuthError] = useState('');
 
   const formatTimestamp = (timestamp) => {
     return new Date(timestamp).toLocaleString();
@@ -34,6 +40,16 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
     if (/^\d{0,6}$/.test(value)) {
       setPatientId(value);
       setPatientIdError(''); // Clear error when user types valid input
+    }
+  };
+
+  const handleEmployeeIdChange = (e) => {
+    const value = e.target.value;
+    // Only allow digits and limit to 6 characters
+    if (/^\d{0,6}$/.test(value)) {
+      setEmployeeId(value);
+      setEmployeeIdError(''); // Clear error when user types valid input
+      setAuthError(''); // Clear auth error when user types
     }
   };
 
@@ -121,13 +137,33 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
   };
 
   const handleSupervisorOverride = async () => {
-    if (!supervisorId.trim() || !supervisorName.trim() || !selectedOverrideStatus || !overrideReason.trim()) {
-      alert('Please fill in all fields for the supervisor override');
+    // Validate Employee ID is exactly 6 digits
+    if (!employeeId || employeeId.length !== 6) {
+      setEmployeeIdError('Employee ID must be exactly 6 digits');
+      return;
+    }
+
+    // Clear previous errors
+    setEmployeeIdError('');
+    setAuthError('');
+
+    // Validate required fields
+    if (!password.trim() || !selectedOverrideStatus) {
+      setAuthError('Please fill in all required fields');
+      return;
+    }
+
+    // Check authentication
+    const validEmployeeIds = ['220306', '130506'];
+    const validPassword = 'admin@123';
+
+    if (!validEmployeeIds.includes(employeeId) || password !== validPassword) {
+      setAuthError('Invalid Employee ID or password');
       return;
     }
 
     const confirmed = window.confirm(
-      `Are you sure you want to override bed ${bedId} status from "${getStatusLabel(effectiveStatus)}" to "${getStatusLabel(selectedOverrideStatus)}"?\n\nThis action will be logged for audit purposes.`
+      `Are you sure you want to override bed ${bedId} status to "${getStatusLabel(selectedOverrideStatus)}"?\n\nThis action will be logged for audit purposes.`
     );
     
     if (!confirmed) return;
@@ -135,20 +171,22 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
     setLoading(true);
     try {
       await supervisorOverrideBedStatus(bedId, selectedOverrideStatus, {
-        supervisorId: supervisorId.trim(),
-        supervisorName: supervisorName.trim(),
+        employeeId: employeeId,
         previousStatus: effectiveStatus,
-        reason: overrideReason.trim()
-      }, updateLocalHistory);
+        reason: overrideReason.trim() || 'No reason provided'
+      }, updateLocalHistory, updateBedsData);
       
       setShowOverrideModal(false);
-      setSupervisorId('');
-      setSupervisorName('');
+      // Clear all form fields
+      setEmployeeId('');
+      setPassword('');
       setOverrideReason('');
       setSelectedOverrideStatus('');
+      setEmployeeIdError('');
+      setAuthError('');
       onUpdate && onUpdate();
     } catch (error) {
-      alert('Error applying supervisor override: ' + error.message);
+      setAuthError('Error applying supervisor override: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -222,7 +260,7 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
             <div className="bg-yellow-200 bg-opacity-30 p-2 rounded text-yellow-100">
               <strong>Override Active:</strong>
               <br />
-              By: {bedData.override.supervisorName}
+              By Employee: {bedData.override.employeeId || bedData.override.supervisorId || 'Unknown'}
               <br />
               Reason: {bedData.override.reason}
             </div>
@@ -359,24 +397,36 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor ID</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
                 <input
                   type="text"
-                  value={supervisorId}
-                  onChange={(e) => setSupervisorId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter supervisor ID"
+                  value={employeeId}
+                  onChange={handleEmployeeIdChange}
+                  className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 ${
+                    employeeIdError 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
+                  placeholder="Enter 6-digit employee ID"
+                  maxLength="6"
                 />
+                {employeeIdError && (
+                  <p className="mt-1 text-sm text-red-600">{employeeIdError}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">Must be exactly 6 digits</p>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
-                  type="text"
-                  value={supervisorName}
-                  onChange={(e) => setSupervisorName(e.target.value)}
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setAuthError(''); // Clear auth error when user types
+                  }}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter supervisor name"
+                  placeholder="Enter password"
                 />
               </div>
 
@@ -397,15 +447,21 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Override</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Override (Optional)</label>
                 <textarea
                   value={overrideReason}
                   onChange={(e) => setOverrideReason(e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows="3"
-                  placeholder="Explain why this override is necessary..."
+                  placeholder="Explain why this override is necessary (optional)..."
                 />
               </div>
+
+              {authError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded">
+                  <p className="text-sm text-red-800">{authError}</p>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 mt-6">
