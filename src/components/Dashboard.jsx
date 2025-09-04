@@ -5,6 +5,7 @@ import { seedDummyData, addHistoryEntry } from '../firebase/seedData';
 import BedCard from './BedCard';
 import HistoryTable from './HistoryTable';
 import { getEffectiveBedStatus, checkAndUnassignExpiredPatients } from '../firebase/bedManager';
+import { BED_STATUSES } from '../utils/bedUtils';
 
 const Dashboard = () => {
   const [beds, setBeds] = useState({});
@@ -188,8 +189,13 @@ const Dashboard = () => {
     if (filter === 'all') return beds;
     
     return Object.fromEntries(
-      Object.entries(beds).filter(([_, bedData]) => {
+      Object.entries(beds).filter(([bedId, bedData]) => {
+        const effectiveStatus = getEffectiveBedStatus(bedData);
+        
         switch (filter) {
+          case 'available':
+            // Only truly unoccupied beds without cleaning are available
+            return effectiveStatus === BED_STATUSES.UNOCCUPIED;
           case 'occupied':
             return bedData.status === 'occupied' || bedData.status === 'occupied-cleaning';
           case 'unoccupied':
@@ -343,7 +349,8 @@ const Dashboard = () => {
             >
               <option value="all">All Beds</option>
               <option value="occupied">Occupied</option>
-              <option value="unoccupied">Available</option>
+              <option value="available">Available</option>
+              <option value="unoccupied">Unoccupied</option>
               <option value="cleaning">Cleaning</option>
             </select>
           </div>
