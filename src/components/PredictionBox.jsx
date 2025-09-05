@@ -1,6 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { PredictionService } from '../services/PredictionService';
 
 const PredictionBox = ({ onNavigateToAnalytics }) => {
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchPrediction = async () => {
+      try {
+        // You can customize this data based on your model's requirements
+        const data = {
+          timestamp: new Date().toISOString(),
+          current_occupancy: 75, // Example value
+          day_of_week: new Date().getDay(),
+          hour: new Date().getHours()
+        };
+
+        const result = await PredictionService.getPredictions(data);
+        setPrediction(result);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load prediction');
+        setLoading(false);
+      }
+    };
+
+    fetchPrediction();
+    // Refresh predictions every 5 minutes
+    const interval = setInterval(fetchPrediction, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div 
       onClick={onNavigateToAnalytics}
@@ -14,8 +45,18 @@ const PredictionBox = ({ onNavigateToAnalytics }) => {
       
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-2xl font-bold" style={{ color: '#01796F' }}>--</p>
-          <p className="text-sm" style={{ color: '#01796F' }}>Expected Patients</p>
+          {loading ? (
+            <p className="text-sm" style={{ color: '#01796F' }}>Loading...</p>
+          ) : error ? (
+            <p className="text-sm text-red-600">{error}</p>
+          ) : (
+            <>
+              <p className="text-2xl font-bold" style={{ color: '#01796F' }}>
+                {prediction?.current || '--'}
+              </p>
+              <p className="text-sm" style={{ color: '#01796F' }}>Expected Patients</p>
+            </>
+          )}
         </div>
         <div className="w-10 h-10 rounded-full flex items-center justify-center" 
              style={{ backgroundColor: '#01796F' }}>

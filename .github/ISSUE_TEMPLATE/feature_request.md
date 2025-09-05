@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest a new feature for the Hospital Bed Management System
+about: Suggest a new feature for CuraLink
 title: '[FEATURE] '
 labels: 'enhancement'
 assignees: ''

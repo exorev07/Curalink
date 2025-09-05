@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug in the Hospital Bed Management System
+about: Report a bug in CuraLink
 title: '[BUG] '
 labels: 'bug'
 assignees: ''
