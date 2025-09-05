@@ -5,10 +5,14 @@ A modern React-based dashboard for managing hospital bed occupancy with real-tim
 ## 🏥 Features
 
 - **Real-time bed status tracking** with color-coded indicators
+- **Ward classification** (ICU, Maternity, General)
+- **Patient assignment system** with 30-minute auto-timer
+- **Supervisor override system** with secure authentication
+- **6-digit patient ID validation** 
 - **Firebase Authentication** for secure access
 - **Firebase Realtime Database** for live data synchronization
 - **Responsive dashboard** with bed grid layout
-- **Status filtering** (All, Occupied, Available, Cleaning)
+- **Ward and status filtering** 
 - **History tracking** with detailed change logs
 - **Visual statistics** overview
 - **Modern UI** built with TailwindCSS
@@ -27,6 +31,12 @@ A modern React-based dashboard for managing hospital bed occupancy with real-tim
 - 🔴 **Occupied** - Bed is currently occupied by a patient
 - 🟠 **Occupied + Cleaning** - Bed is occupied and requires cleaning
 - 🟣 **Unoccupied + Cleaning** - Bed is empty but needs cleaning
+
+## 🏥 Ward Classifications
+
+- 🔴 **ICU Ward** - Intensive Care Unit beds
+- 🩷 **Maternity Ward** - Maternity and obstetrics beds  
+- 🔵 **General Ward** - Standard patient care beds
 
 ## � Documentation
 
@@ -144,10 +154,25 @@ src/
 
 ### Managing Beds
 
-- **View bed status** in the color-coded grid layout
-- **Change status** using the dropdown in each bed card
-- **Filter beds** using the status filter dropdown
+- **View bed status** in the color-coded grid layout organized by ward
+- **Filter beds** by status (All, Occupied, Available, Unoccupied, Cleaning) or by ward (ICU, Maternity, General)
+- **Assign patients** with 6-digit patient ID validation and 30-minute timer
 - **Monitor changes** in the history table at the bottom
+
+### 🔐 Supervisor Override
+
+The system includes a secure supervisor override feature for authorized personnel:
+
+**Valid Supervisor Credentials:**
+- **Employee ID:** `220306` or `130506`
+- **Password:** `admin@123`
+
+**Features:**
+- Always-visible supervisor override buttons on every bed
+- Employee ID must be exactly 6 digits
+- Real-time validation with error messages
+- Comprehensive audit logging with Employee ID and timestamp
+- Manual bed status changes for emergency situations
 
 ### Status Changes
 
