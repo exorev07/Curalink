@@ -1,8 +1,23 @@
-# Hospital Bed Occupancy Management Dashboard
+# Hospital Bed Management System
 
-A modern React-based dashboard for managing hospital bed occupancy with real-time Firebase integration.
+A comprehensive IoT-based hospital bed management system with smart hardware monitoring and a real-time dashboard interface.
 
-## 🏥 Features
+## 🏥 System Components
+
+### 1. Smart Bed Monitoring Hardware
+- ESP8266-based intelligent bed monitoring
+- Temperature and weight-based occupancy detection
+- RFID staff verification system
+- Real-time status indication via LCD and LED
+- Automated cleaning status management
+
+### 2. Real-time Dashboard
+- Modern React-based web interface
+- Real-time bed status monitoring
+- Staff authentication and access control
+- Comprehensive bed management features
+
+## 🚀 Features
 
 - **Real-time bed status tracking** with color-coded indicators
 - **Ward classification** (ICU, Maternity, General)
@@ -43,6 +58,7 @@ A modern React-based dashboard for managing hospital bed occupancy with real-tim
 - **[🤝 Collaboration Guide](docs/COLLABORATION.md)** - Team workflow and setup
 - **[🛠️ Development Guide](docs/DEVELOPMENT.md)** - Development workflow and guidelines  
 - **[🚀 Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment instructions
+- **[⚡ Hardware Setup](docs/HARDWARE.md)** - Hardware assembly and configuration
 
 ## �🚀 Getting Started
 
