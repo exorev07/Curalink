@@ -320,7 +320,7 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
         <div className="mt-auto pt-4 space-y-2">
           {/* Patient Management */}
           <div className="flex gap-2">
-            {!hasPatient && effectiveStatus === BED_STATUSES.UNOCCUPIED ? (
+            {!hasPatient && effectiveStatus === BED_STATUSES.UNASSIGNED ? (
               <button
                 onClick={() => setShowAssignModal(true)}
                 disabled={loading}
