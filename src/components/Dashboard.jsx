@@ -355,18 +355,16 @@ const Dashboard = ({ onNavigate }) => {
       occupied: 0,
       unoccupied: 0,
       cleaning: 0,
-      overridden: 0
+      unassigned: 0
     };
 
     Object.values(beds).forEach(bed => {
       const effectiveStatus = getEffectiveBedStatus(bed);
       
-      // Count overrides
-      if (bed.override && bed.override.active) {
-        counts.overridden++;
-      }
-      
       // Count by effective status
+      if (effectiveStatus === BED_STATUSES.UNASSIGNED) {
+        counts.unassigned++;
+      }
       if (effectiveStatus === BED_STATUSES.OCCUPIED || effectiveStatus === BED_STATUSES.OCCUPIED_CLEANING) {
         counts.occupied++;
       }
@@ -498,8 +496,8 @@ const Dashboard = ({ onNavigate }) => {
           </div>
           <div style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }} className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 flex items-center justify-center min-h-[100px]">
             <div className="flex flex-col items-center justify-center">
-              <div className="text-2xl font-bold text-yellow-600">{statusCounts.overridden}</div>
-              <div className="mt-2" style={{ color: '#01796F' }}>Overridden</div>
+              <div className="text-2xl font-bold text-gray-600">{statusCounts.unassigned}</div>
+              <div className="mt-2" style={{ color: '#01796F' }}>Unassigned</div>
             </div>
           </div>
           <div className="md:col-span-1">
