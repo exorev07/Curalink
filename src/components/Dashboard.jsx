@@ -31,11 +31,22 @@ const Dashboard = ({ onNavigate }) => {
     onNavigate(page);
   };
   const [showSeedButton, setShowSeedButton] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0); // For triggering re-renders
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [wardExpanded, setWardExpanded] = useState(false);
-  const [maternityExpanded, setMaternityExpanded] = useState(false);
-  const [generalExpanded, setGeneralExpanded] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Initialize ward expansion states from localStorage or default to true
+  const [wardExpanded, setWardExpanded] = useState(() => {
+    const saved = localStorage.getItem('icuWardExpanded');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [maternityExpanded, setMaternityExpanded] = useState(() => {
+    const saved = localStorage.getItem('maternityWardExpanded');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [generalExpanded, setGeneralExpanded] = useState(() => {
+    const saved = localStorage.getItem('generalWardExpanded');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
 
   // Demo data for when Firebase is not configured
   const demoData = {
@@ -178,8 +189,9 @@ const Dashboard = ({ onNavigate }) => {
     return () => {
       unsubscribeBeds();
       unsubscribeHistory();
+      hardwareUnsubscribe();
     };
-  }, []);
+  }, [refreshKey]);
 
   // Timer to check for expired patient assignments every minute
   useEffect(() => {
@@ -198,15 +210,23 @@ const Dashboard = ({ onNavigate }) => {
     return () => clearInterval(interval);
   }, [beds]); // Re-run when beds data changes
 
+  // Save ward expansion states to localStorage
+  useEffect(() => {
+    localStorage.setItem('icuWardExpanded', JSON.stringify(wardExpanded));
+    localStorage.setItem('maternityWardExpanded', JSON.stringify(maternityExpanded));
+    localStorage.setItem('generalWardExpanded', JSON.stringify(generalExpanded));
+  }, [wardExpanded, maternityExpanded, generalExpanded]);
+
   // Function to trigger data refresh after bed operations
   const handleBedUpdate = () => {
+    // Increment refreshKey to trigger a re-render
     setRefreshKey(prev => prev + 1);
     
     // In demo mode, we might need to manually refresh data
     if (isDemoMode || !database) {
-      // Force a re-render to show updated states
-      // In a real implementation, this would trigger a Firebase refresh
       console.log('Bed update triggered in demo mode');
+      // Force a re-render to show updated states
+      setBeds(prev => ({...prev}));
     }
   };
 
