@@ -62,8 +62,8 @@ const Dashboard = ({ onNavigate }) => {
         status: 'occupied+cleaning',
         ward: WARD_TYPES.ICU,
         lastUpdate: '2025-09-02T13:30:00',
-        assignedNurse: 'NURSE45',
-        cleaningStaff: 'CLEAN03'
+        assignedNurse: '',
+        cleaningStaff: ''
       },
       bed3: {
         status: 'unoccupied',
@@ -76,14 +76,14 @@ const Dashboard = ({ onNavigate }) => {
         status: 'occupied',
         ward: WARD_TYPES.MATERNITY,
         lastUpdate: '2025-09-02T11:15:00',
-        assignedNurse: 'NURSE33',
+        assignedNurse: '',
         cleaningStaff: ''
       },
       bed5: {
         status: 'occupied',
         ward: WARD_TYPES.GENERAL,
         lastUpdate: '2025-09-02T10:30:00',
-        assignedNurse: 'NURSE67',
+        assignedNurse: '',
         cleaningStaff: ''
       },
       bed6: {
@@ -91,7 +91,7 @@ const Dashboard = ({ onNavigate }) => {
         ward: WARD_TYPES.GENERAL,
         lastUpdate: '2025-09-02T09:45:00',
         assignedNurse: '',
-        cleaningStaff: 'CLEAN02'
+        cleaningStaff: ''
       }
     },
     history: [
