@@ -120,87 +120,119 @@ const Dashboard = ({ onNavigate }) => {
   };
 
   useEffect(() => {
-    // Subscribe to hardware bed updates
-    const hardwareUnsubscribe = subscribeToHardwareBed((bedId, data) => {
-      setBeds(prev => ({
-        ...prev,
-        [`bed${bedId}`]: {
-          ...prev[`bed${bedId}`],
-          ...data,
-          ward: 'ICU', // Hardware bed is in ICU
-          sensorData: data.sensorData
+    console.log('Setting up data subscriptions...');
+    let mounted = true;
+
+    const setupSubscriptions = async () => {
+      try {
+        // Subscribe to hardware bed updates
+        const hardwareUnsubscribe = subscribeToHardwareBed((bedId, data) => {
+          if (!mounted) return;
+          console.log('Hardware bed update:', bedId, data);
+          setBeds(prev => ({
+            ...prev,
+            [`bed${bedId}`]: {
+              ...prev[`bed${bedId}`],
+              ...data,
+              ward: WARD_TYPES.ICU,
+              sensorData: data.sensorData
+            }
+          }));
+        });
+
+        if (isDemoMode) {
+          console.log('Initializing demo mode data...');
+          // Initialize beds with current timestamps
+          const now = new Date().toISOString();
+          const updatedBeds = Object.entries(demoData.beds).reduce((acc, [bedId, bed]) => {
+            acc[bedId] = {
+              ...bed,
+              lastUpdate: now
+            };
+            return acc;
+          }, {});
+          setBeds(updatedBeds);
+          setHistory(demoData.history);
+          setLoading(false);
+          setShowSeedButton(true);
+          return () => {
+            mounted = false;
+            hardwareUnsubscribe?.();
+          };
         }
-      }));
-    });
 
-    if (isDemoMode) {
-      // Initialize beds with current timestamps
-      const now = new Date().toISOString();
-      const updatedBeds = Object.entries(demoData.beds).reduce((acc, [bedId, bed]) => {
-        acc[bedId] = {
-          ...bed,
-          lastUpdate: now
+        // Listen for beds data
+        console.log('Setting up Firebase listeners...');
+        const bedsRef = ref(database, 'beds');
+        const unsubscribeBeds = onValue(bedsRef, (snapshot) => {
+          if (!mounted) return;
+          console.log('Beds data update received');
+          const data = snapshot.val();
+          if (data) {
+            setBeds(data);
+            setShowSeedButton(false);
+          } else {
+            setBeds({});
+            setShowSeedButton(true);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error('Firebase beds error:', error);
+          if (!mounted) return;
+          // Fallback to demo data on error
+          setBeds(demoData.beds);
+          setHistory(demoData.history);
+          setLoading(false);
+        });
+
+        // Listen for history data
+        const historyRef = ref(database, 'bedHistory');
+        const unsubscribeHistory = onValue(historyRef, (snapshot) => {
+          if (!mounted) return;
+          console.log('History data update received');
+          const data = snapshot.val();
+          if (data) {
+            const historyArray = Object.values(data)
+              .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+              .filter((item, index, self) => 
+                index === self.findIndex(t => (
+                  t.timestamp === item.timestamp &&
+                  t.action === item.action &&
+                  t.bedId === item.bedId &&
+                  JSON.stringify(t.data) === JSON.stringify(item.data)
+                ))
+              );
+            setHistory(historyArray);
+          } else {
+            setHistory([]);
+          }
+        }, (error) => {
+          console.error('Firebase history error:', error);
+          if (!mounted) return;
+          setHistory(demoData.history);
+        });
+
+        return () => {
+          console.log('Cleaning up subscriptions...');
+          mounted = false;
+          if (!isDemoMode) {
+            unsubscribeBeds?.();
+            unsubscribeHistory?.();
+          }
+          hardwareUnsubscribe?.();
         };
-        return acc;
-      }, {});
-      setBeds(updatedBeds);
-      setHistory(demoData.history);
-      setLoading(false);
-      setShowSeedButton(true);
-      return () => hardwareUnsubscribe();
-    }
-
-    // Listen for beds data
-    const bedsRef = ref(database, 'beds');
-    const unsubscribeBeds = onValue(bedsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setBeds(data);
-        setShowSeedButton(false);
-      } else {
-        setBeds({});
-        setShowSeedButton(true);
+      } catch (error) {
+        console.error('Error setting up subscriptions:', error);
+        if (mounted) {
+          setLoading(false);
+          setBeds(demoData.beds);
+          setHistory(demoData.history);
+        }
       }
-      setLoading(false);
-    }, (error) => {
-      console.error('Firebase beds error:', error);
-      // Fallback to demo data on error
-      setBeds(demoData.beds);
-      setHistory(demoData.history);
-      setLoading(false);
-    });
-
-    // Listen for history data
-    const historyRef = ref(database, 'bedHistory');
-    const unsubscribeHistory = onValue(historyRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        // Remove duplicates based on timestamp and details
-        const historyArray = Object.values(data)
-          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-          .filter((item, index, self) => 
-            index === self.findIndex(t => (
-              t.timestamp === item.timestamp &&
-              t.action === item.action &&
-              t.bedId === item.bedId &&
-              JSON.stringify(t.data) === JSON.stringify(item.data)
-            ))
-          );
-        setHistory(historyArray);
-      } else {
-        setHistory([]);
-      }
-    }, (error) => {
-      console.error('Firebase history error:', error);
-      setHistory(demoData.history);
-    });
-
-    return () => {
-      unsubscribeBeds();
-      unsubscribeHistory();
-      hardwareUnsubscribe();
     };
-  }, [refreshKey]);
+
+    setupSubscriptions();
+  }, []);
 
   // Timer to check for expired patient assignments every minute
   useEffect(() => {
@@ -277,7 +309,8 @@ const Dashboard = ({ onNavigate }) => {
     if (filter === 'all') return beds;
     
     return Object.fromEntries(
-      Object.entries(beds).filter(([bedId, bedData]) => {
+      Object.entries(beds || {}).filter(([bedId, bedData]) => {
+        if (!bedData) return false;
         const effectiveStatus = getEffectiveBedStatus(bedData);
         const bedWard = bedData.ward || 'General';
         
@@ -286,17 +319,17 @@ const Dashboard = ({ onNavigate }) => {
             // Only truly unoccupied beds without cleaning are available
             return effectiveStatus === BED_STATUSES.UNOCCUPIED;
           case 'occupied':
-            return bedData.status === 'occupied' || bedData.status === 'occupied-cleaning';
+            return bedData.status === BED_STATUSES.OCCUPIED || bedData.status === BED_STATUSES.OCCUPIED_CLEANING;
           case 'unoccupied':
-            return bedData.status === 'unoccupied' || bedData.status === 'unoccupied-cleaning';
+            return bedData.status === BED_STATUSES.UNOCCUPIED || bedData.status === BED_STATUSES.UNOCCUPIED_CLEANING;
           case 'cleaning':
-            return bedData.status === 'occupied-cleaning' || bedData.status === 'unoccupied-cleaning';
+            return bedData.status === BED_STATUSES.OCCUPIED_CLEANING || bedData.status === BED_STATUSES.UNOCCUPIED_CLEANING;
           case 'ward-icu':
-            return bedWard === 'ICU';
+            return bedWard === WARD_TYPES.ICU;
           case 'ward-maternity':
-            return bedWard === 'Maternity';
+            return bedWard === WARD_TYPES.MATERNITY;
           case 'ward-general':
-            return bedWard === 'General';
+            return bedWard === WARD_TYPES.GENERAL;
           default:
             return true;
         }
@@ -334,14 +367,14 @@ const Dashboard = ({ onNavigate }) => {
       }
       
       // Count by effective status
-      if (effectiveStatus === 'occupied' || effectiveStatus === 'occupied-cleaning') {
+      if (effectiveStatus === BED_STATUSES.OCCUPIED || effectiveStatus === BED_STATUSES.OCCUPIED_CLEANING) {
         counts.occupied++;
       }
       // Only count as unoccupied if it's truly available (not in cleaning)
-      if (effectiveStatus === 'unoccupied') {
+      if (effectiveStatus === BED_STATUSES.UNOCCUPIED) {
         counts.unoccupied++;
       }
-      if (effectiveStatus === 'occupied-cleaning' || effectiveStatus === 'unoccupied-cleaning') {
+      if (effectiveStatus === BED_STATUSES.OCCUPIED_CLEANING || effectiveStatus === BED_STATUSES.UNOCCUPIED_CLEANING) {
         counts.cleaning++;
       }
     });
@@ -362,6 +395,16 @@ const Dashboard = ({ onNavigate }) => {
 
   const filteredBeds = getFilteredBeds();
   const statusCounts = getStatusCounts();
+  const wardBedsMap = groupBedsByWard(beds);
+
+  // Add console logs for debugging
+  console.log('Rendering Dashboard with:', {
+    loading,
+    bedsCount: Object.keys(beds).length,
+    filteredBedsCount: Object.keys(filteredBeds).length,
+    statusCounts,
+    wardBedsMap
+  });
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#e9eae0' }}>
@@ -418,25 +461,25 @@ const Dashboard = ({ onNavigate }) => {
           <div className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 relative group flex items-center justify-center min-h-[100px]" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
             <div className="flex flex-col items-center justify-center">
               <div className="text-2xl font-bold text-green-600">{statusCounts.unoccupied}</div>
-              <div className="mt-2" style={{ color: '#01796F' }}>Ready</div>
+              <div className="mt-2" style={{ color: '#01796F' }}>Unoccupied</div>
             </div>
             
-            {/* Hover tooltip for Ready beds */}
+            {/* Hover tooltip for Unoccupied beds */}
             <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full 
                           p-3 rounded-lg shadow-lg z-10 w-48
                           opacity-0 group-hover:opacity-100 transition-opacity duration-300
                           pointer-events-none border-2"
                  style={{ backgroundColor: '#e9eae0', borderColor: '#d6d7cd' }}>
-              <div className="text-sm font-medium text-gray-900 mb-2">Ready Beds by Ward:</div>
-              {Object.entries(groupBedsByWard(filteredBeds)).map(([ward, wardBeds]) => {
-                const readyCount = Object.values(wardBeds).filter(bed => 
-                  getEffectiveBedStatus(bed) === 'unoccupied'
+              <div className="text-sm font-medium text-gray-900 mb-2">Unoccupied Beds by Ward:</div>
+              {Object.entries(wardBedsMap).map(([ward, wardBeds]) => {
+                const unoccupiedCount = Object.values(wardBeds).filter(bed => 
+                  getEffectiveBedStatus(bed) === BED_STATUSES.UNOCCUPIED && !bed.cleaning
                 ).length;
-                if (readyCount > 0) {
+                if (unoccupiedCount > 0) {
                   return (
                     <div key={ward} className="flex justify-between items-center mb-1">
                       <span style={{ color: '#01796F' }}>{ward}:</span>
-                      <span className="font-medium text-green-600">{readyCount}</span>
+                      <span className="font-medium text-green-600">{unoccupiedCount}</span>
                     </div>
                   );
                 }
