@@ -10,6 +10,9 @@ const TEMP_THRESHOLD = 32;
 import { logBedAction } from '../firebase/bedManager';
 
 let lastKnownStatus = null;
+let isLoggingStatus = false;
+let lastLogTime = 0;
+const LOG_DEBOUNCE_TIME = 1000; // 1 second debounce
 
 export const subscribeToHardwareBed = (onUpdate) => {
   if (!database) return () => {};
@@ -23,16 +26,25 @@ export const subscribeToHardwareBed = (onUpdate) => {
     // Convert hardware data to dashboard format
     const bedStatus = getBedStatusFromHardware(data);
     
-    // Log if status has changed
-    if (lastKnownStatus !== bedStatus) {
-      await logBedAction(`bed${HARDWARE_BED_ID}`, 'status_change', {
-        previousStatus: lastKnownStatus || 'unknown',
-        newStatus: bedStatus,
-        staffId: data.lastStaffId || null,  // Include staff ID if available
-        source: 'hardware',
-        details: `${lastKnownStatus || 'unknown'} to ${bedStatus}`
-      });
-      lastKnownStatus = bedStatus;
+    // Log if status has changed and we're not already logging
+    const now = Date.now();
+    if (lastKnownStatus !== bedStatus && 
+        !isLoggingStatus && 
+        (now - lastLogTime) >= LOG_DEBOUNCE_TIME) {
+      try {
+        isLoggingStatus = true;
+        await logBedAction(`bed${HARDWARE_BED_ID}`, 'status_change', {
+          previousStatus: lastKnownStatus || 'unknown',
+          newStatus: bedStatus,
+          staffId: data.lastStaffId || null,  // Include staff ID if available
+          source: 'hardware',
+          details: `${lastKnownStatus || 'unknown'} to ${bedStatus}`
+        });
+        lastKnownStatus = bedStatus;
+        lastLogTime = now;
+      } finally {
+        isLoggingStatus = false;
+      }
     }
 
     const sensorData = {

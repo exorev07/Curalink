@@ -155,9 +155,17 @@ const Dashboard = ({ onNavigate }) => {
     const unsubscribeHistory = onValue(historyRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const historyArray = Object.values(data).sort((a, b) => 
-          new Date(b.timestamp) - new Date(a.timestamp)
-        );
+        // Remove duplicates based on timestamp and details
+        const historyArray = Object.values(data)
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+          .filter((item, index, self) => 
+            index === self.findIndex(t => (
+              t.timestamp === item.timestamp &&
+              t.action === item.action &&
+              t.bedId === item.bedId &&
+              JSON.stringify(t.data) === JSON.stringify(item.data)
+            ))
+          );
         setHistory(historyArray);
       } else {
         setHistory([]);
