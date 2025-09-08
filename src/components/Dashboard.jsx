@@ -53,42 +53,42 @@ const Dashboard = ({ onNavigate }) => {
     beds: {
       bed1: {
         status: 'unoccupied',
-        ward: 'ICU',
+        ward: WARD_TYPES.ICU,
         lastUpdate: '2025-09-02T14:00:00',
         assignedNurse: '',
         cleaningStaff: ''
       },
       bed2: {
-        status: 'occupied',
-        ward: 'ICU',
+        status: 'unoccupied',
+        ward: WARD_TYPES.ICU,
         lastUpdate: '2025-09-02T13:30:00',
-        assignedNurse: 'NURSE45',
+        assignedNurse: '',
         cleaningStaff: ''
       },
       bed3: {
-        status: 'occupied-cleaning',
-        ward: 'Maternity',
+        status: 'unoccupied',
+        ward: WARD_TYPES.MATERNITY,
         lastUpdate: '2025-09-02T12:45:00',
-        assignedNurse: 'NURSE23',
-        cleaningStaff: 'CLEAN01'
+        assignedNurse: '',
+        cleaningStaff: ''
       },
       bed4: {
-        status: 'unoccupied-cleaning',
-        ward: 'Maternity',
+        status: 'unoccupied',
+        ward: WARD_TYPES.MATERNITY,
         lastUpdate: '2025-09-02T11:15:00',
         assignedNurse: '',
-        cleaningStaff: 'CLEAN02'
+        cleaningStaff: ''
       },
       bed5: {
-        status: 'occupied',
-        ward: 'General',
+        status: 'unoccupied',
+        ward: WARD_TYPES.GENERAL,
         lastUpdate: '2025-09-02T10:30:00',
-        assignedNurse: 'NURSE67',
+        assignedNurse: '',
         cleaningStaff: ''
       },
       bed6: {
         status: 'unoccupied',
-        ward: 'General',
+        ward: WARD_TYPES.GENERAL,
         lastUpdate: '2025-09-02T09:45:00',
         assignedNurse: '',
         cleaningStaff: ''
@@ -129,15 +129,21 @@ const Dashboard = ({ onNavigate }) => {
         const hardwareUnsubscribe = subscribeToHardwareBed((bedId, data) => {
           if (!mounted) return;
           console.log('Hardware bed update:', bedId, data);
-          setBeds(prev => ({
-            ...prev,
-            [`bed${bedId}`]: {
-              ...prev[`bed${bedId}`],
-              ...data,
-              ward: WARD_TYPES.ICU,
-              sensorData: data.sensorData
+          setBeds(prev => {
+            // Make a copy of the previous state
+            const updatedBeds = { ...prev };
+            
+            // Update only the hardware bed
+            if (bedId === HARDWARE_BED_ID) {
+              updatedBeds[`bed${bedId}`] = {
+                ...prev[`bed${bedId}`],
+                ...data,
+                ward: WARD_TYPES.ICU,
+                sensorData: data.sensorData
+              };
             }
-          }));
+            return updatedBeds;
+          });
         });
 
         if (isDemoMode) {
@@ -145,10 +151,20 @@ const Dashboard = ({ onNavigate }) => {
           // Initialize beds with current timestamps
           const now = new Date().toISOString();
           const updatedBeds = Object.entries(demoData.beds).reduce((acc, [bedId, bed]) => {
-            acc[bedId] = {
-              ...bed,
-              lastUpdate: now
-            };
+            // For bed1 (hardware bed), preserve any existing data
+            if (bedId === `bed${HARDWARE_BED_ID}`) {
+              acc[bedId] = {
+                ...bed,
+                ...acc[bedId],
+                lastUpdate: now,
+                ward: WARD_TYPES.ICU
+              };
+            } else {
+              acc[bedId] = {
+                ...bed,
+                lastUpdate: now
+              };
+            }
             return acc;
           }, {});
           setBeds(updatedBeds);
@@ -167,14 +183,28 @@ const Dashboard = ({ onNavigate }) => {
         const unsubscribeBeds = onValue(bedsRef, (snapshot) => {
           if (!mounted) return;
           console.log('Beds data update received');
-          const data = snapshot.val();
-          if (data) {
-            setBeds(data);
-            setShowSeedButton(false);
-          } else {
-            setBeds({});
-            setShowSeedButton(true);
+          const data = snapshot.val() || {};
+          
+          // Initialize with demo data if beds are missing
+          const now = new Date().toISOString();
+          const updatedBeds = { ...demoData.beds };
+          
+          // Only update bed1 if it exists in Firebase
+          if (data[`bed${HARDWARE_BED_ID}`]) {
+            updatedBeds[`bed${HARDWARE_BED_ID}`] = {
+              ...updatedBeds[`bed${HARDWARE_BED_ID}`],
+              ...data[`bed${HARDWARE_BED_ID}`],
+              ward: WARD_TYPES.ICU
+            };
           }
+          
+          // Set timestamps for all beds
+          Object.keys(updatedBeds).forEach(bedId => {
+            updatedBeds[bedId].lastUpdate = now;
+          });
+          
+          setBeds(updatedBeds);
+          setShowSeedButton(false);
           setLoading(false);
         }, (error) => {
           console.error('Firebase beds error:', error);
