@@ -3,35 +3,65 @@
 ## Project Structure
 
 ```
-src/
-├── components/          # React components
-│   ├── BedCard.jsx     # Individual bed status card
-│   ├── Dashboard.jsx   # Main dashboard component
-│   ├── HistoryTable.jsx # Change history table
-│   ├── LoginPage.jsx   # Authentication page
-│   └── Navbar.jsx      # Navigation component
-├── contexts/           # React contexts
-│   └── AuthContext.jsx # Authentication context
-├── firebase/           # Firebase configuration
-│   ├── config.js       # Firebase setup
-│   └── seedData.js     # Sample data utilities
-├── App.jsx            # Main app component
-├── main.jsx           # App entry point
-└── index.css          # Global styles
+project-root/
+├── src/                # Frontend React application
+│   ├── components/     # React components
+│   │   ├── Analytics.jsx    # ML predictions display
+│   │   ├── BedCard.jsx     # Individual bed status card
+│   │   ├── Dashboard.jsx   # Main dashboard component
+│   │   ├── HistoryTable.jsx # Change history table
+│   │   ├── LoginPage.jsx   # Authentication page
+│   │   ├── Navbar.jsx      # Navigation component
+│   │   └── PredictionBox.jsx # ML predictions component
+│   ├── contexts/      # React contexts
+│   │   └── AuthContext.jsx # Authentication context
+│   ├── firebase/      # Firebase configuration
+│   │   ├── config.js  # Firebase setup
+│   │   └── seedData.js # Sample data utilities
+│   ├── utils/         # Utility functions
+│   │   ├── bedUtils.js # Bed status utilities
+│   │   └── hardwareBed.js # Hardware integration
+│   ├── App.jsx       # Main app component
+│   ├── main.jsx      # App entry point
+│   └── index.css     # Global styles
+├── backend/          # Python ML backend
+│   ├── app.py       # Flask server
+│   ├── ml_model.pkl # Trained prediction model
+│   └── requirements.txt # Python dependencies
+└── hardware/        # ESP8266 firmware
+    └── code.cpp    # Hardware control code
 ```
 
 ## Development Workflow
 
 ### **Setting Up Development Environment**
 ```bash
-# Install dependencies
+# Install frontend dependencies
 npm install
 
-# Start development server
+# Install Python backend dependencies
+cd backend
+pip install -r requirements.txt
+cd ..
+
+# Start backend server (in one terminal)
+cd backend
+python app.py
+
+# Start frontend development server (in another terminal)
 npm run dev
 
 # Open browser to http://localhost:5173
 ```
+
+### **Hardware Development Setup**
+1. Install Arduino IDE
+2. Install ESP8266 board support
+3. Install required libraries:
+   - MFRC522 (RFID)
+   - Firebase ESP Client
+   - ArduinoJson
+   - LiquidCrystal I2C
 
 ### **Code Style Guidelines**
 - Use functional components with hooks

@@ -19,18 +19,31 @@ A comprehensive IoT-based hospital bed management system with smart hardware mon
 
 ## 🚀 Features
 
-- **Real-time bed status tracking** with color-coded indicators
-- **Ward classification** (ICU, Maternity, General)
-- **Patient assignment system** with 30-minute auto-timer
-- **Supervisor override system** with secure authentication
-- **6-digit patient ID validation** 
-- **Firebase Authentication** for secure access
-- **Firebase Realtime Database** for live data synchronization
-- **Responsive dashboard** with bed grid layout
-- **Ward and status filtering** 
-- **History tracking** with detailed change logs
-- **Visual statistics** overview
-- **Modern UI** built with TailwindCSS
+- **Hardware Integration**
+  - Real-time ESP8266 monitoring for Bed 1
+  - Temperature and weight-based occupancy detection
+  - RFID staff verification system
+  - Automated status updates
+
+- **Smart Dashboard**
+  - Real-time bed status tracking with color-coded indicators
+  - Ward classification (ICU, Maternity, General)
+  - Patient assignment system with 30-minute auto-timer
+  - Supervisor override system with secure authentication
+  - 6-digit patient ID validation
+  - Responsive layout with ward-wise organization
+
+- **Backend Intelligence**
+  - ML-based occupancy prediction system
+  - Automated cleaning status management
+  - Real-time data synchronization
+  - Comprehensive change history logging
+
+- **Security & Integration**
+  - Firebase Authentication for secure access
+  - Firebase Realtime Database for live updates
+  - Secure staff verification system
+  - Role-based access control
 
 ## 🛠️ Tech Stack
 
@@ -49,9 +62,9 @@ A comprehensive IoT-based hospital bed management system with smart hardware mon
 
 ## 🏥 Ward Classifications
 
-- 🔴 **ICU Ward** - Intensive Care Unit beds
-- 🩷 **Maternity Ward** - Maternity and obstetrics beds  
-- 🔵 **General Ward** - Standard patient care beds
+- 🔴 **ICU Ward** - Intensive Care Unit beds with hardware integration for Bed 1
+- 💛 **Maternity Ward** - Maternity and obstetrics beds with custom status tracking
+- 🔵 **General Ward** - Standard patient care beds with automated cleaning status
 
 ## � Documentation
 
@@ -209,8 +222,12 @@ All status changes are automatically:
 ### Sample Data
 
 The app includes a `seedData.js` file that provides:
-- 6 sample beds with different statuses
-- Sample history entries
+- 6 sample beds across 3 wards:
+  - ICU Ward (Beds 1-2): Bed 1 with hardware integration
+  - Maternity Ward (Beds 3-4): Standard monitoring
+  - General Ward (Beds 5-6): Standard monitoring
+- Automatic status synchronization for hardware-integrated bed
+- Sample history entries with timestamps
 - Easy data seeding function for testing
 
 ### Real-time Updates
