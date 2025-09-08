@@ -250,16 +250,22 @@ export const getEffectiveBedStatus = (bedData) => {
     return bedData.override.status;
   }
   
-  // Map hardware-reported status to correct format
+  // First check for unassigned status
+  if (bedData.assignment && bedData.assignment.status === 'unassigned') {
+    return 'unassigned';
+  }
+
+  // Then map hardware-reported status to correct format
   if (bedData.status) {
     if (bedData.status === 'unoccupied+cleaning') return 'unoccupied_cleaning';
     if (bedData.status === 'occupied+cleaning') return 'occupied_cleaning';
     if (bedData.status === 'unoccupied') return 'unoccupied';
     if (bedData.status === 'occupied') return 'occupied';
+    if (bedData.status === 'unassigned') return 'unassigned';
   }
   
-  // Fallback to unknown if no valid status
-  return 'unknown';
+  // Fallback to unassigned if no valid status
+  return 'unassigned';
 };
 
 // Check if bed has active patient assignment

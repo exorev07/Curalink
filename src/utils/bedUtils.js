@@ -1,11 +1,11 @@
 // Utility functions for bed status management
 
 export const BED_STATUSES = {
+  UNASSIGNED: 'unassigned',
   UNOCCUPIED: 'unoccupied',
   OCCUPIED: 'occupied',
   OCCUPIED_CLEANING: 'occupied_cleaning',
-  UNOCCUPIED_CLEANING: 'unoccupied_cleaning',
-  UNASSIGNED: 'unassigned'
+  UNOCCUPIED_CLEANING: 'unoccupied_cleaning'
 };
 
 export const WARD_TYPES = {
@@ -59,7 +59,20 @@ export const getStatusColor = (status) => {
  * @returns {string} The human-readable status label
  */
 export const getStatusLabel = (status) => {
-  return STATUS_LABELS[status] || 'Unknown';
+  switch (status) {
+    case BED_STATUSES.UNASSIGNED:
+      return 'Unassigned';
+    case BED_STATUSES.UNOCCUPIED:
+      return 'Unoccupied';
+    case BED_STATUSES.OCCUPIED:
+      return 'Occupied';
+    case BED_STATUSES.OCCUPIED_CLEANING:
+      return 'Occupied (Cleaning)';
+    case BED_STATUSES.UNOCCUPIED_CLEANING:
+      return 'Unoccupied (Cleaning)';
+    default:
+      return 'Unknown';
+  }
 };
 
 /**
@@ -134,12 +147,12 @@ export const getEffectiveBedStatus = (bedData) => {
     return bedData.override.status;
   }
   
-  // If status is explicitly unassigned, return that
+  // If status is explicitly unassigned, return unassigned
   if (bedData.status === 'unassigned') {
     return BED_STATUSES.UNASSIGNED;
   }
   
-  // Otherwise use the hardware-reported status
+  // Otherwise use the hardware-reported status or default to unassigned
   return bedData.status || BED_STATUSES.UNASSIGNED;
 };
 
