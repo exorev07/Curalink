@@ -5,7 +5,9 @@ import { database, isDemoMode } from './config';
 // Patient assignment functions
 export const assignPatientToBed = async (bedId, patientData, updateLocalHistory = null, updateBedsData = null) => {
   const now = new Date();
+  const timestamp = now.toISOString();
   const expiresAt = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
+  const expiresAtTimestamp = expiresAt.toISOString();
   
   if (isDemoMode || !database) {
     console.log('Demo mode: Would assign patient to bed', bedId, patientData);
@@ -16,6 +18,7 @@ export const assignPatientToBed = async (bedId, patientData, updateLocalHistory 
         ...prevBeds,
         [bedId]: {
           ...prevBeds[bedId],
+          lastUpdate: now.toISOString(), // Add current timestamp
           assignment: {
             patientId: patientData.patientId,
             patientName: patientData.patientName,
@@ -39,15 +42,20 @@ export const assignPatientToBed = async (bedId, patientData, updateLocalHistory 
   }
 
   try {
-    const bedRef = ref(database, `beds/${bedId}/assignment`);
-    await set(bedRef, {
+    const updates = {};
+    updates[`beds/${bedId}/assignment`] = {
       patientId: patientData.patientId,
       patientName: patientData.patientName,
       assignedBy: patientData.assignedBy,
-      assignedAt: serverTimestamp(),
-      expiresAt: expiresAt.toISOString(),
+      assignedAt: timestamp,
+      expiresAt: expiresAtTimestamp,
       status: 'active'
-    });
+    };
+    updates[`beds/${bedId}/lastUpdate`] = timestamp;
+    
+    // Apply both updates atomically
+    const dbRef = ref(database);
+    await update(dbRef, updates);
 
     // Log the assignment
     await logBedAction(bedId, 'patient_assigned', {

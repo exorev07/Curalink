@@ -86,11 +86,70 @@ export const getStatusBadgeColor = (status) => {
 
 /**
  * Format a timestamp for display
- * @param {string} timestamp - ISO timestamp string
+ * @param {string|number} timestamp - Timestamp (ISO string, Unix timestamp, or Date object)
  * @returns {string} Formatted date and time
  */
 export const formatTimestamp = (timestamp) => {
-  return new Date(timestamp).toLocaleString();
+  try {
+    // If no timestamp, throw error to use current time
+    if (!timestamp) {
+      throw new Error('No timestamp provided');
+    }
+
+    let date;
+    // Handle ISO string format (e.g., "2024-01-21T13:39:20.000Z")
+    if (typeof timestamp === 'string') {
+      if (timestamp.includes('T')) {
+        date = new Date(timestamp);
+      } else {
+        // Try to parse non-ISO string formats
+        date = new Date(Date.parse(timestamp));
+      }
+    }
+    // Handle Unix timestamp (in milliseconds)
+    else if (typeof timestamp === 'number') {
+      // Check if it's seconds instead of milliseconds
+      if (timestamp < 2000000000) { // If less than year 2033
+        date = new Date(timestamp * 1000);
+      } else {
+        date = new Date(timestamp);
+      }
+    }
+    // Handle Date object
+    else if (timestamp instanceof Date) {
+      date = timestamp;
+    }
+    // Try to handle any other format as a last resort
+    else {
+      date = new Date(timestamp);
+    }
+
+    // Validate the date
+    if (!date || isNaN(date.getTime()) || date.getFullYear() < 2020) {
+      throw new Error('Invalid date value or too old');
+    }
+
+    // Format the valid date
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (error) {
+    console.error('Error formatting timestamp:', error);
+    const now = new Date();
+    return now.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
 };
 
 /**

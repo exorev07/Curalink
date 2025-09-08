@@ -134,7 +134,16 @@ const Dashboard = ({ onNavigate }) => {
     });
 
     if (isDemoMode) {
-      setBeds(demoData.beds);
+      // Initialize beds with current timestamps
+      const now = new Date().toISOString();
+      const updatedBeds = Object.entries(demoData.beds).reduce((acc, [bedId, bed]) => {
+        acc[bedId] = {
+          ...bed,
+          lastUpdate: now
+        };
+        return acc;
+      }, {});
+      setBeds(updatedBeds);
       setHistory(demoData.history);
       setLoading(false);
       setShowSeedButton(true);
@@ -225,8 +234,18 @@ const Dashboard = ({ onNavigate }) => {
     // In demo mode, we might need to manually refresh data
     if (isDemoMode || !database) {
       console.log('Bed update triggered in demo mode');
-      // Force a re-render to show updated states
-      setBeds(prev => ({...prev}));
+      // Update timestamps and force a re-render
+      setBeds(prev => {
+        const now = new Date().toISOString();
+        const updated = { ...prev };
+        Object.keys(updated).forEach(bedId => {
+          updated[bedId] = {
+            ...updated[bedId],
+            lastUpdate: now
+          };
+        });
+        return updated;
+      });
     }
   };
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BED_STATUSES, getStatusColor, getStatusLabel } from '../utils/bedUtils';
+import React, { useState, useEffect, useMemo } from 'react';
+import { BED_STATUSES, getStatusColor, getStatusLabel, formatTimestamp } from '../utils/bedUtils';
 import { HARDWARE_BED_ID } from '../utils/hardwareBed';
 import { 
   assignPatientToBed, 
@@ -13,6 +13,8 @@ import {
 
 const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData, allBeds }) => {
   const isHardwareBed = parseInt(bedId.replace('bed', '')) === HARDWARE_BED_ID;
+  
+  // State management
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [patientId, setPatientId] = useState('');
@@ -25,16 +27,30 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
   const [remainingTime, setRemainingTime] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
   const [patientIdError, setPatientIdError] = useState('');
-  
-  // New state for supervisor authentication
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
   const [employeeIdError, setEmployeeIdError] = useState('');
   const [authError, setAuthError] = useState('');
 
-  const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
-  };
+  // Create safe bed data with current timestamps
+  const safeData = useMemo(() => {
+    const now = new Date().toISOString();
+    const defaultData = {
+      status: 'unassigned',
+      lastUpdate: now,
+      ward: 'General',
+      override: null,
+      assignment: null
+    };
+    
+    return {
+      ...defaultData,
+      ...(bedData || {}),
+      lastUpdate: (bedData?.lastUpdate && !isNaN(new Date(bedData.lastUpdate).getTime())) 
+        ? bedData.lastUpdate 
+        : now
+    };
+  }, [bedData]);
 
   const handlePatientIdChange = (e) => {
     const value = e.target.value;
@@ -55,9 +71,9 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
     }
   };
 
-  const effectiveStatus = getEffectiveBedStatus(bedData);
-  const hasPatient = hasActivePatientAssignment(bedData);
-  const hasOverride = bedData.override && bedData.override.active;
+  const effectiveStatus = getEffectiveBedStatus(safeData);
+  const hasPatient = hasActivePatientAssignment(safeData);
+  const hasOverride = safeData.override && safeData.override.active;
 
   // Update timer every minute
   useEffect(() => {
@@ -208,7 +224,7 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
           <div>
             <h3 className="text-xl font-bold">{bedId.toUpperCase()}</h3>
             <p className="text-xs text-white text-opacity-80 mt-1">
-              {bedData.ward || 'General'} Ward
+              {safeData.ward} Ward
             </p>
           </div>
           <span className="text-sm bg-white bg-opacity-20 px-2 py-1 rounded">
@@ -254,7 +270,7 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
             <div>
               <strong>Last Updated:</strong>
               <br />
-              {formatTimestamp(bedData.lastUpdate)}
+              {formatTimestamp(safeData.lastUpdate)}
             </div>
           )}
 
@@ -303,15 +319,15 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
             </div>
           )}
           
-          {bedData.assignedNurse && (
+          {safeData.assignedNurse && (
             <div>
-              <strong>Nurse:</strong> {bedData.assignedNurse}
+              <strong>Nurse:</strong> {safeData.assignedNurse}
             </div>
           )}
           
-          {bedData.cleaningStaff && (
+          {safeData.cleaningStaff && (
             <div>
-              <strong>Cleaning Staff:</strong> {bedData.cleaningStaff}
+              <strong>Cleaning Staff:</strong> {safeData.cleaningStaff}
             </div>
           )}
         </div>
