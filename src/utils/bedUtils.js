@@ -134,8 +134,13 @@ export const getEffectiveBedStatus = (bedData) => {
     return bedData.override.status;
   }
   
+  // If status is explicitly unassigned, return that
+  if (bedData.status === 'unassigned') {
+    return BED_STATUSES.UNASSIGNED;
+  }
+  
   // Otherwise use the hardware-reported status
-  return bedData.status || 'unknown';
+  return bedData.status || BED_STATUSES.UNASSIGNED;
 };
 
 /**

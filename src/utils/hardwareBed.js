@@ -43,10 +43,8 @@ export const subscribeToHardwareBed = (onUpdate) => {
 const getBedStatusFromHardware = (data) => {
   // First check if status is explicitly set from hardware
   if (data.status) {
-    // Check for numeric status from hardware (Arduino enum)
-    if (data.status === 4) return 'unassigned';
-    
     // Convert directly from Firebase format (with +) to our format (with _)
+    if (data.status === 'unassigned') return 'unassigned';
     if (data.status === 'unoccupied+cleaning') return 'unoccupied_cleaning';
     if (data.status === 'occupied+cleaning') return 'occupied_cleaning';
     if (data.status === 'unoccupied') return 'unoccupied';
