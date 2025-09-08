@@ -1,5 +1,5 @@
 // Firebase utilities for bed management and supervisor overrides
-import { ref, set, push, serverTimestamp } from 'firebase/database';
+import { ref, set, push, serverTimestamp, get, update } from 'firebase/database';
 import { database, isDemoMode } from './config';
 
 // Patient assignment functions
@@ -154,16 +154,21 @@ export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorDa
   }
 
   try {
-    // Set the override status
-    const overrideRef = ref(database, `beds/${bedId}/override`);
-    await set(overrideRef, {
+    // Set both the status and override simultaneously to prevent flicker
+    const updates = {};
+    updates[`beds/${bedId}/status`] = newStatus;
+    updates[`beds/${bedId}/override`] = {
       status: newStatus,
       employeeId: supervisorData.employeeId,
       previousStatus: supervisorData.previousStatus,
       reason: supervisorData.reason,
       timestamp: serverTimestamp(),
       active: true
-    });
+    };
+
+    // Apply both updates atomically
+    const dbRef = ref(database);
+    await update(dbRef, updates);
 
     // Log the override in the overrides collection
     const overrideLogRef = ref(database, 'bedOverrides');
@@ -243,28 +248,32 @@ export const logBedAction = async (bedId, action, data, updateLocalHistory = nul
   }
 };
 
-// Get effective bed status (considering overrides)
+  // Get effective bed status (considering overrides)
 export const getEffectiveBedStatus = (bedData) => {
-  // If there's an active override, use that status
+  // First check if we're in a cleaning state
+  if (bedData.status && 
+    (bedData.status === 'unoccupied+cleaning' || 
+     bedData.status === 'occupied+cleaning' ||
+     bedData.status.includes('cleaning'))) {
+    return bedData.status === 'occupied+cleaning' ? 'occupied_cleaning' : 'unoccupied_cleaning';
+  }
+
+  // Then check for override
   if (bedData.override && bedData.override.active) {
     return bedData.override.status;
   }
-  
-  // First check for unassigned status
-  if (bedData.assignment && bedData.assignment.status === 'unassigned') {
-    return 'unassigned';
-  }
 
-  // Then map hardware-reported status to correct format
+  // Then check regular status
   if (bedData.status) {
-    if (bedData.status === 'unoccupied+cleaning') return 'unoccupied_cleaning';
-    if (bedData.status === 'occupied+cleaning') return 'occupied_cleaning';
     if (bedData.status === 'unoccupied') return 'unoccupied';
     if (bedData.status === 'occupied') return 'occupied';
     if (bedData.status === 'unassigned') return 'unassigned';
   }
   
-  // Fallback to unassigned if no valid status
+  // Finally check assignment status
+  if (bedData.assignment && bedData.assignment.status === 'unassigned') {
+    return 'unassigned';
+  }  // Fallback to unassigned if no valid status
   return 'unassigned';
 };
 
