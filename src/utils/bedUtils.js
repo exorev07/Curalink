@@ -4,7 +4,8 @@ export const BED_STATUSES = {
   UNOCCUPIED: 'unoccupied',
   OCCUPIED: 'occupied',
   OCCUPIED_CLEANING: 'occupied_cleaning',
-  UNOCCUPIED_CLEANING: 'unoccupied_cleaning'
+  UNOCCUPIED_CLEANING: 'unoccupied_cleaning',
+  UNASSIGNED: 'unassigned'
 };
 
 export const WARD_TYPES = {
@@ -23,21 +24,24 @@ export const STATUS_COLORS = {
   [BED_STATUSES.UNOCCUPIED]: 'bg-[#2E8B57]',
   [BED_STATUSES.OCCUPIED]: 'bg-red-600',
   [BED_STATUSES.OCCUPIED_CLEANING]: 'bg-orange-500',
-  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'bg-yellow-500'
+  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'bg-yellow-500',
+  [BED_STATUSES.UNASSIGNED]: 'bg-gray-500'
 };
 
 export const STATUS_LABELS = {
   [BED_STATUSES.UNOCCUPIED]: 'Unoccupied',
   [BED_STATUSES.OCCUPIED]: 'Occupied',
   [BED_STATUSES.OCCUPIED_CLEANING]: 'Occupied+Cleaning',
-  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'Unoccupied+Cleaning'
+  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'Unoccupied+Cleaning',
+  [BED_STATUSES.UNASSIGNED]: 'Unassigned'
 };
 
 export const STATUS_BADGE_COLORS = {
   [BED_STATUSES.UNOCCUPIED]: 'bg-green-100 text-green-800',
   [BED_STATUSES.OCCUPIED]: 'bg-red-100 text-red-800',
   [BED_STATUSES.OCCUPIED_CLEANING]: 'bg-orange-100 text-orange-800',
-  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'bg-yellow-100 text-yellow-800'
+  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'bg-yellow-100 text-yellow-800',
+  [BED_STATUSES.UNASSIGNED]: 'bg-gray-100 text-gray-800'
 };
 
 /**
