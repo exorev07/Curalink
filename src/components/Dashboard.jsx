@@ -444,16 +444,67 @@ const Dashboard = ({ onNavigate }) => {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
-          <div className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 flex items-center justify-center min-h-[100px]" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
+          <div className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 relative group flex items-center justify-center min-h-[100px]" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
             <div className="flex flex-col items-center justify-center">
               <div className="text-2xl font-bold text-gray-900">{statusCounts.total}</div>
               <div className="mt-2" style={{ color: '#01796F' }}>Total Beds</div>
             </div>
+            
+            {/* Hover tooltip for Total beds */}
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full 
+                          p-3 rounded-lg shadow-lg z-10 w-48
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                          pointer-events-none border-2"
+                 style={{ backgroundColor: '#e9eae0', borderColor: '#d6d7cd' }}>
+              <div className="text-sm font-medium text-gray-900 mb-2">Total Beds by Ward:</div>
+              {Object.entries(wardBedsMap).map(([ward, wardBeds]) => {
+                const count = Object.keys(wardBeds).length;
+                if (count > 0) {
+                  return (
+                    <div key={ward} className="flex justify-between items-center mb-1">
+                      <span style={{ color: '#01796F' }}>{ward}:</span>
+                      <span className="font-medium text-gray-900">{count}</span>
+                    </div>
+                  );
+                }
+                return null;
+              })}
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                <div style={{ backgroundColor: '#e9eae0', borderColor: '#d6d7cd' }} className="w-3 h-3 border-l border-t transform rotate-45"></div>
+              </div>
+            </div>
           </div>
-          <div className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 flex items-center justify-center min-h-[100px]" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
+          <div className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 relative group flex items-center justify-center min-h-[100px]" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
             <div className="flex flex-col items-center justify-center">
               <div className="text-2xl font-bold text-red-600">{statusCounts.occupied}</div>
               <div className="mt-2" style={{ color: '#01796F' }}>Occupied</div>
+            </div>
+            
+            {/* Hover tooltip for Occupied beds */}
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full 
+                          p-3 rounded-lg shadow-lg z-10 w-48
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                          pointer-events-none border-2"
+                 style={{ backgroundColor: '#e9eae0', borderColor: '#d6d7cd' }}>
+              <div className="text-sm font-medium text-gray-900 mb-2">Occupied Beds by Ward:</div>
+              {Object.entries(wardBedsMap).map(([ward, wardBeds]) => {
+                const occupiedCount = Object.values(wardBeds).filter(bed => 
+                  getEffectiveBedStatus(bed) === BED_STATUSES.OCCUPIED || 
+                  getEffectiveBedStatus(bed) === BED_STATUSES.OCCUPIED_CLEANING
+                ).length;
+                if (occupiedCount > 0) {
+                  return (
+                    <div key={ward} className="flex justify-between items-center mb-1">
+                      <span style={{ color: '#01796F' }}>{ward}:</span>
+                      <span className="font-medium text-red-600">{occupiedCount}</span>
+                    </div>
+                  );
+                }
+                return null;
+              })}
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                <div style={{ backgroundColor: '#e9eae0', borderColor: '#d6d7cd' }} className="w-3 h-3 border-l border-t transform rotate-45"></div>
+              </div>
             </div>
           </div>
           <div className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 relative group flex items-center justify-center min-h-[100px]" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
@@ -488,16 +539,69 @@ const Dashboard = ({ onNavigate }) => {
               </div>
             </div>
           </div>
-          <div style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }} className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 flex items-center justify-center min-h-[100px]">
+          <div className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 relative group flex items-center justify-center min-h-[100px]" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
             <div className="flex flex-col items-center justify-center">
               <div className="text-2xl font-bold text-orange-600">{statusCounts.cleaning}</div>
               <div className="mt-2" style={{ color: '#01796F' }}>Cleaning</div>
             </div>
+
+            {/* Hover tooltip for Cleaning beds */}
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full 
+                          p-3 rounded-lg shadow-lg z-10 w-48
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                          pointer-events-none border-2"
+                 style={{ backgroundColor: '#e9eae0', borderColor: '#d6d7cd' }}>
+              <div className="text-sm font-medium text-gray-900 mb-2">Cleaning Beds by Ward:</div>
+              {Object.entries(wardBedsMap).map(([ward, wardBeds]) => {
+                const cleaningCount = Object.values(wardBeds).filter(bed => 
+                  getEffectiveBedStatus(bed) === BED_STATUSES.OCCUPIED_CLEANING || 
+                  getEffectiveBedStatus(bed) === BED_STATUSES.UNOCCUPIED_CLEANING
+                ).length;
+                if (cleaningCount > 0) {
+                  return (
+                    <div key={ward} className="flex justify-between items-center mb-1">
+                      <span style={{ color: '#01796F' }}>{ward}:</span>
+                      <span className="font-medium text-orange-600">{cleaningCount}</span>
+                    </div>
+                  );
+                }
+                return null;
+              })}
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                <div style={{ backgroundColor: '#e9eae0', borderColor: '#d6d7cd' }} className="w-3 h-3 border-l border-t transform rotate-45"></div>
+              </div>
+            </div>
           </div>
-          <div style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }} className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 flex items-center justify-center min-h-[100px]">
+          <div style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }} className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 relative group flex items-center justify-center min-h-[100px]">
             <div className="flex flex-col items-center justify-center">
               <div className="text-2xl font-bold text-gray-600">{statusCounts.unassigned}</div>
               <div className="mt-2" style={{ color: '#01796F' }}>Unassigned</div>
+            </div>
+
+            {/* Hover tooltip for Unassigned beds */}
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full 
+                          p-3 rounded-lg shadow-lg z-10 w-48
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                          pointer-events-none border-2"
+                 style={{ backgroundColor: '#e9eae0', borderColor: '#d6d7cd' }}>
+              <div className="text-sm font-medium text-gray-900 mb-2">Unassigned Beds by Ward:</div>
+              {Object.entries(wardBedsMap).map(([ward, wardBeds]) => {
+                const unassignedCount = Object.values(wardBeds).filter(bed => 
+                  getEffectiveBedStatus(bed) === BED_STATUSES.UNASSIGNED
+                ).length;
+                if (unassignedCount > 0) {
+                  return (
+                    <div key={ward} className="flex justify-between items-center mb-1">
+                      <span style={{ color: '#01796F' }}>{ward}:</span>
+                      <span className="font-medium text-gray-600">{unassignedCount}</span>
+                    </div>
+                  );
+                }
+                return null;
+              })}
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                <div style={{ backgroundColor: '#e9eae0', borderColor: '#d6d7cd' }} className="w-3 h-3 border-l border-t transform rotate-45"></div>
+              </div>
             </div>
           </div>
           <div className="md:col-span-1">
