@@ -901,6 +901,7 @@ void updateFirebase() {
     json.add("temperature", temp);
     json.add("lastUpdate", (int)now_time);
     json.add("online", true);
+    json.add("lastStaffId", currentStaffId);  // Add the staff ID that initiated the change
     
     // Prepare JSON data
     String jsonStr;

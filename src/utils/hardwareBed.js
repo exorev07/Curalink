@@ -7,17 +7,34 @@ export const HARDWARE_BED_ID = 1;
 const FSR_THRESHOLD = 50;
 const TEMP_THRESHOLD = 32;
 
+import { logBedAction } from '../firebase/bedManager';
+
+let lastKnownStatus = null;
+
 export const subscribeToHardwareBed = (onUpdate) => {
   if (!database) return () => {};
 
   const bedRef = ref(database, `beds/bed${HARDWARE_BED_ID}`);
   
-  const handleBedUpdate = (snapshot) => {
+  const handleBedUpdate = async (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
 
     // Convert hardware data to dashboard format
     const bedStatus = getBedStatusFromHardware(data);
+    
+    // Log if status has changed
+    if (lastKnownStatus !== bedStatus) {
+      await logBedAction(`bed${HARDWARE_BED_ID}`, 'status_change', {
+        previousStatus: lastKnownStatus || 'unknown',
+        newStatus: bedStatus,
+        staffId: data.lastStaffId || null,  // Include staff ID if available
+        source: 'hardware',
+        details: `${lastKnownStatus || 'unknown'} to ${bedStatus}`
+      });
+      lastKnownStatus = bedStatus;
+    }
+
     const sensorData = {
       fsrValue: data.fsrValue || 0,
       temperature: data.temperature || 0,

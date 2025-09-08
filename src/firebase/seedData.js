@@ -53,7 +53,7 @@ export const seedDummyData = async () => {
     await set(bedsRef, dummyBeds);
     
     // Add some history entries
-    const historyRef = ref(database, 'history');
+    const historyRef = ref(database, 'bedHistory');
     const historyEntries = [
       {
         bedId: 'bed1',
@@ -96,7 +96,7 @@ export const addHistoryEntry = async (bedId, status, assignedNurse = '', cleanin
   }
 
   try {
-    const historyRef = ref(database, 'history');
+    const historyRef = ref(database, 'bedHistory');
     await push(historyRef, {
       bedId,
       status,

@@ -48,6 +48,13 @@ const HistoryTable = ({ historyData }) => {
             color: 'bg-green-100 text-green-800',
             details: entry.data?.clearedBy || 'System'
           };
+        case 'status_change':
+          return {
+            label: 'Status Change',
+            color: 'bg-teal-100 text-teal-800',
+            details: entry.data?.details || '',
+            staffId: entry.data?.staffId || '-'
+          };
         default:
           return {
             label: entry.action.replace('_', ' ').toUpperCase(),
@@ -116,7 +123,7 @@ const HistoryTable = ({ historyData }) => {
                     {actionDisplay.details || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: '#01796F' }}>
-                    {entry.data?.assignedBy || entry.data?.employeeId || entry.data?.supervisorName || entry.assignedNurse || entry.cleaningStaff || '-'}
+                    {actionDisplay.staffId || entry.data?.assignedBy || entry.data?.employeeId || entry.data?.supervisorName || entry.assignedNurse || entry.cleaningStaff || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: '#01796F' }}>
                     {formatTimestamp(entry.timestamp)}
