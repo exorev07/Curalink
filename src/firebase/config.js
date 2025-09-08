@@ -3,15 +3,11 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
-// Firebase configuration - REPLACE WITH YOUR ACTUAL CONFIG
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: "demo-api-key",
-  authDomain: "demo-project.firebaseapp.com",
-  databaseURL: "https://demo-project-default-rtdb.firebaseio.com/",
-  projectId: "demo-project",
-  storageBucket: "demo-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "demo-app-id"
+  apiKey: "AIzaSyB9_UqNfJekvzTaqv_LgGraFdyP0LmWuGo",
+  databaseURL: "https://curalink-6a722-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "curalink-6a722"
 };
 
 // Check if we're using demo config

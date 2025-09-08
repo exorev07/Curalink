@@ -3,8 +3,8 @@
 export const BED_STATUSES = {
   UNOCCUPIED: 'unoccupied',
   OCCUPIED: 'occupied',
-  OCCUPIED_CLEANING: 'occupied-cleaning',
-  UNOCCUPIED_CLEANING: 'unoccupied-cleaning'
+  OCCUPIED_CLEANING: 'occupied_cleaning',
+  UNOCCUPIED_CLEANING: 'unoccupied_cleaning'
 };
 
 export const WARD_TYPES = {

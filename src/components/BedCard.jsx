@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BED_STATUSES, getStatusColor, getStatusLabel } from '../utils/bedUtils';
+import { HARDWARE_BED_ID } from '../utils/hardwareBed';
 import { 
   assignPatientToBed, 
   unassignPatientFromBed, 
@@ -11,6 +12,7 @@ import {
 } from '../firebase/bedManager';
 
 const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData, allBeds }) => {
+  const isHardwareBed = parseInt(bedId.replace('bed', '')) === HARDWARE_BED_ID;
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [patientId, setPatientId] = useState('');
@@ -215,11 +217,46 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
         </div>
         
         <div className="space-y-2 text-sm flex-grow">
-          <div>
-            <strong>Last Updated:</strong>
-            <br />
-            {formatTimestamp(bedData.lastUpdate)}
-          </div>
+          {isHardwareBed && bedData.sensorData ? (
+            <>
+              <div>
+                <strong>Sensor Status:</strong>
+                <br />
+                <span className={`inline-block px-2 py-1 text-xs rounded ${
+                  bedData.sensorData.online ? 'bg-green-500 bg-opacity-30' : 'bg-red-500 bg-opacity-30'
+                }`}>
+                  {bedData.sensorData.online ? '🟢 Connected' : '🔴 Offline'}
+                </span>
+              </div>
+              <div>
+                <strong>Temperature:</strong>
+                <br />
+                {bedData.sensorData.temperature.toFixed(1)}°C
+                {bedData.sensorData.hasBodyTemp && 
+                  <span className="ml-2 text-yellow-300">⚡ Body heat detected</span>
+                }
+              </div>
+              <div>
+                <strong>Pressure:</strong>
+                <br />
+                {bedData.sensorData.fsrValue}
+                {bedData.sensorData.hasWeight && 
+                  <span className="ml-2 text-yellow-300">⚡ Weight detected</span>
+                }
+              </div>
+              <div>
+                <strong>Last Updated:</strong>
+                <br />
+                {formatTimestamp(bedData.sensorData.lastUpdate)}
+              </div>
+            </>
+          ) : (
+            <div>
+              <strong>Last Updated:</strong>
+              <br />
+              {formatTimestamp(bedData.lastUpdate)}
+            </div>
+          )}
 
           {/* Patient Assignment Info */}
           {hasPatient && (

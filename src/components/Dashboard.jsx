@@ -7,6 +7,7 @@ import HistoryTable from './HistoryTable';
 import PredictionBox from './PredictionBox';
 import { getEffectiveBedStatus, checkAndUnassignExpiredPatients } from '../firebase/bedManager';
 import { BED_STATUSES, WARD_TYPES, WARD_COLORS } from '../utils/bedUtils';
+import { subscribeToHardwareBed, HARDWARE_BED_ID } from '../utils/hardwareBed';
 
 const filterOptions = [
   { value: 'all', label: 'All Beds' },
@@ -108,12 +109,25 @@ const Dashboard = ({ onNavigate }) => {
   };
 
   useEffect(() => {
-    if (isDemoMode || !database) {
-      // Use demo data when Firebase is not configured
+    // Subscribe to hardware bed updates
+    const hardwareUnsubscribe = subscribeToHardwareBed((bedId, data) => {
+      setBeds(prev => ({
+        ...prev,
+        [`bed${bedId}`]: {
+          ...prev[`bed${bedId}`],
+          ...data,
+          ward: 'ICU', // Hardware bed is in ICU
+          sensorData: data.sensorData
+        }
+      }));
+    });
+
+    if (isDemoMode) {
       setBeds(demoData.beds);
       setHistory(demoData.history);
       setLoading(false);
-      return;
+      setShowSeedButton(true);
+      return () => hardwareUnsubscribe();
     }
 
     // Listen for beds data
