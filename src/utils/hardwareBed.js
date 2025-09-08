@@ -43,18 +43,12 @@ export const subscribeToHardwareBed = (onUpdate) => {
 const getBedStatusFromHardware = (data) => {
   // First check if status is explicitly set from hardware
   if (data.status) {
-    // Convert hyphenated status to match BED_STATUSES format
-    switch (data.status) {
-      case 'unoccupied-cleaning':
-        return 'unoccupied_cleaning';  // Match BED_STATUSES.UNOCCUPIED_CLEANING
-      case 'occupied-cleaning':
-        return 'occupied_cleaning';    // Match BED_STATUSES.OCCUPIED_CLEANING
-      case 'discharge':
-        return data.isOccupied ? 'occupied' : 'unoccupied';
-      case 'unoccupied':
-      case 'occupied':
-        return data.status;
-    }
+    // Convert directly from Firebase format (with +) to our format (with _)
+    if (data.status === 'unoccupied+cleaning') return 'unoccupied_cleaning';
+    if (data.status === 'occupied+cleaning') return 'occupied_cleaning';
+    if (data.status === 'unoccupied') return 'unoccupied';
+    if (data.status === 'occupied') return 'occupied';
+    if (data.status === 'discharge') return data.isOccupied ? 'occupied' : 'unoccupied';
   }
 
   // If no specific status or unrecognized, determine from occupancy

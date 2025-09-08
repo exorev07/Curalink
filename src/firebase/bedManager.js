@@ -252,8 +252,8 @@ export const getEffectiveBedStatus = (bedData) => {
   
   // Map hardware-reported status to correct format
   if (bedData.status) {
-    if (bedData.status === 'unoccupied-cleaning') return 'unoccupied_cleaning';
-    if (bedData.status === 'occupied-cleaning') return 'occupied_cleaning';
+    if (bedData.status === 'unoccupied+cleaning') return 'unoccupied_cleaning';
+    if (bedData.status === 'occupied+cleaning') return 'occupied_cleaning';
     if (bedData.status === 'unoccupied') return 'unoccupied';
     if (bedData.status === 'occupied') return 'occupied';
   }

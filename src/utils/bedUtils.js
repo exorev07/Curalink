@@ -29,8 +29,8 @@ export const STATUS_COLORS = {
 export const STATUS_LABELS = {
   [BED_STATUSES.UNOCCUPIED]: 'Unoccupied',
   [BED_STATUSES.OCCUPIED]: 'Occupied',
-  [BED_STATUSES.OCCUPIED_CLEANING]: 'Occupied + Cleaning',
-  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'Unoccupied + Cleaning'
+  [BED_STATUSES.OCCUPIED_CLEANING]: 'Occupied+Cleaning',
+  [BED_STATUSES.UNOCCUPIED_CLEANING]: 'Unoccupied+Cleaning'
 };
 
 export const STATUS_BADGE_COLORS = {
