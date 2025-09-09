@@ -73,7 +73,7 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
 
   const effectiveStatus = getEffectiveBedStatus(safeData);
   const hasPatient = hasActivePatientAssignment(safeData);
-  const hasOverride = safeData.override && safeData.override.active;
+  const hasOverride = bedData?.override?.active || false;
 
   // Update timer every minute
   useEffect(() => {

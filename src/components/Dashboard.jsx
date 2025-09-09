@@ -151,18 +151,26 @@ const Dashboard = ({ onNavigate }) => {
           // Initialize beds with current timestamps
           const now = new Date().toISOString();
           const updatedBeds = Object.entries(demoData.beds).reduce((acc, [bedId, bed]) => {
-            // For bed1 (hardware bed), preserve any existing data
+            const existingBed = beds[bedId];
             if (bedId === `bed${HARDWARE_BED_ID}`) {
+              // For bed1 (hardware bed), preserve any existing data
               acc[bedId] = {
                 ...bed,
-                ...acc[bedId],
+                ...existingBed,
                 lastUpdate: now,
                 ward: WARD_TYPES.ICU
               };
             } else {
+              // For demo beds (2-6)
               acc[bedId] = {
-                ...bed,
-                lastUpdate: now
+                ...bed,  // Base demo data
+                ...existingBed,  // Existing runtime state
+                lastUpdate: now,
+                // Preserve override if it exists and is active
+                ...(existingBed?.override?.active ? {
+                  status: existingBed.override.status,
+                  override: existingBed.override
+                } : {})
               };
             }
             return acc;
@@ -289,25 +297,25 @@ const Dashboard = ({ onNavigate }) => {
   }, [wardExpanded, maternityExpanded, generalExpanded]);
 
   // Function to trigger data refresh after bed operations
-  const handleBedUpdate = () => {
+  const handleBedUpdate = (updateData) => {
     // Increment refreshKey to trigger a re-render
     setRefreshKey(prev => prev + 1);
     
     // In demo mode, we might need to manually refresh data
     if (isDemoMode || !database) {
       console.log('Bed update triggered in demo mode');
-      // Update timestamps and force a re-render
-      setBeds(prev => {
-        const now = new Date().toISOString();
-        const updated = { ...prev };
-        Object.keys(updated).forEach(bedId => {
-          updated[bedId] = {
-            ...updated[bedId],
-            lastUpdate: now
+      if (updateData && updateData.bedId) {
+        setBeds(prev => {
+          const updated = { ...prev };
+          updated[updateData.bedId] = {
+            ...updated[updateData.bedId],
+            status: updateData.status,
+            override: updateData.override,
+            lastUpdate: new Date().toISOString()
           };
+          return updated;
         });
-        return updated;
-      });
+      }
     }
   };
 

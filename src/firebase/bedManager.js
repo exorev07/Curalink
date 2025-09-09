@@ -130,21 +130,25 @@ export const unassignPatientFromBed = async (bedId, unassignedBy, reason = 'manu
 
 // Supervisor override functions
 export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorData, updateLocalHistory = null, updateBedsData = null) => {
-  if (isDemoMode || !database) {
+  // If it's not bed1 (hardware bed) OR we're in demo mode, use local updates
+  if (bedId !== 'bed1' || isDemoMode || !database) {
     console.log('Demo mode: Would override bed status', bedId, newStatus, supervisorData);
     
     // In demo mode, update the local bed data if callback provided
     if (updateBedsData) {
+      const now = new Date().toISOString();
       updateBedsData(prevBeds => ({
         ...prevBeds,
         [bedId]: {
           ...prevBeds[bedId],
+          status: newStatus,
+          lastUpdate: now,
           override: {
             status: newStatus,
             employeeId: supervisorData.employeeId,
             previousStatus: supervisorData.previousStatus,
             reason: supervisorData.reason,
-            timestamp: new Date().toISOString(),
+            timestamp: now,
             active: true
           }
         }
