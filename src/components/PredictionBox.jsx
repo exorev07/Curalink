@@ -6,6 +6,20 @@ const PredictionBox = ({ onNavigateToAnalytics }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Helper function to convert backend alert colors to CSS classes
+  const getAlertColorClass = (alertColor) => {
+    switch(alertColor) {
+      case 'red':
+        return 'text-red-600';
+      case 'yellow':
+        return 'text-yellow-600';
+      case 'green':
+        return 'text-green-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
   useEffect(() => {
     const fetchPrediction = async () => {
       try {
@@ -51,10 +65,15 @@ const PredictionBox = ({ onNavigateToAnalytics }) => {
             <p className="text-sm text-red-600">{error}</p>
           ) : (
             <>
-              <p className="text-2xl font-bold" style={{ color: '#01796F' }}>
+              <p className={`text-2xl font-bold ${getAlertColorClass(prediction?.alert?.color)}`}>
                 {prediction?.current || '--'}
               </p>
               <p className="text-sm" style={{ color: '#01796F' }}>Expected Patients</p>
+              {prediction?.alert && (
+                <p className={`text-xs ${getAlertColorClass(prediction.alert.color)}`}>
+                  {prediction.alert.level.toUpperCase()}: {prediction.alert.message}
+                </p>
+              )}
             </>
           )}
         </div>

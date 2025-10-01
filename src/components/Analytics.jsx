@@ -28,7 +28,36 @@ ChartJS.register(
 const Analytics = () => {
   const [historicalData, setHistoricalData] = useState([]);
   const [prediction, setPrediction] = useState(null);
+  const [alertInfo, setAlertInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Helper function to convert backend alert colors to CSS classes
+  const getAlertColorClass = (alertColor) => {
+    switch(alertColor) {
+      case 'red':
+        return 'text-red-600';
+      case 'yellow':
+        return 'text-yellow-600';
+      case 'green':
+        return 'text-green-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  // Helper function to get background colors for confidence indicator
+  const getAlertBgClass = (alertColor) => {
+    switch(alertColor) {
+      case 'red':
+        return 'bg-red-500';
+      case 'yellow':
+        return 'bg-yellow-500';
+      case 'green':
+        return 'bg-green-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,6 +71,7 @@ const Analytics = () => {
         const recentData = analyticsData.actual?.slice(-2) || [];
         setHistoricalData(recentData);
         setPrediction(analyticsData.current);
+        setAlertInfo(analyticsData.alert);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -170,7 +200,7 @@ const Analytics = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               ) : (
                 <>
-                  <div className="text-6xl font-bold mb-4" style={{ color: '#01796F' }}>
+                  <div className={`text-6xl font-bold mb-4 ${getAlertColorClass(alertInfo?.color)}`}>
                     {prediction || '--'}
                   </div>
                   <div className="text-xl" style={{ color: '#01796F' }}>
@@ -179,10 +209,19 @@ const Analytics = () => {
                   <div className="mt-8 text-sm text-gray-600">
                     Next Hour: {new Date(Date.now() + 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <div className="mt-4 flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                    <span className="text-sm text-gray-600">Confidence: High</span>
-                  </div>
+                  {alertInfo && (
+                    <div className="mt-4 flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${getAlertBgClass(alertInfo.color)}`}></span>
+                      <span className="text-sm text-gray-600">
+                        Alert Level: {alertInfo.level.charAt(0).toUpperCase() + alertInfo.level.slice(1)}
+                      </span>
+                    </div>
+                  )}
+                  {alertInfo && alertInfo.level !== 'normal' && (
+                    <div className={`mt-2 text-sm font-medium ${getAlertColorClass(alertInfo.color)}`}>
+                      {alertInfo.message}
+                    </div>
+                  )}
                 </>
               )}
             </div>
