@@ -21,9 +21,10 @@ const filterOptions = [
   { value: 'ward-general', label: 'General Ward' }
 ];
 
-const Dashboard = ({ onNavigate }) => {
+const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
   const [beds, setBeds] = useState({});
-  const [history, setHistory] = useState([]);
+  const history = sharedHistory || [];
+  const setHistory = setSharedHistory || (() => {});
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
@@ -951,7 +952,20 @@ const Dashboard = ({ onNavigate }) => {
 
         {/* History Table */}
         <div>
-          <HistoryTable historyData={history} />
+          <HistoryTable historyData={history.slice(0, 5)} />
+          {history.length > 5 && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => handleNavigate('history')}
+                className="text-white px-6 py-2 rounded-lg transition-colors shadow-md"
+                style={{ backgroundColor: '#01796F' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#015e57'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#01796F'}
+              >
+                View All Changes ({history.length})
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -38,6 +38,14 @@ const Navbar = ({ currentPage, onNavigate }) => {
               >
                 Analytics
               </button>
+              <button
+                onClick={() => onNavigate('history')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  currentPage === 'history' ? 'bg-[#015e57]' : 'hover:bg-[#015e57]'
+                }`}
+              >
+                Logs
+              </button>
             </div>
           </div>
 
@@ -114,6 +122,17 @@ const Navbar = ({ currentPage, onNavigate }) => {
             }`}
           >
             Analytics
+          </button>
+          <button
+            onClick={() => {
+              onNavigate('history');
+              setIsMenuOpen(false);
+            }}
+            className={`block w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
+              currentPage === 'history' ? 'bg-[#015e57]' : 'hover:bg-[#015e57]'
+            }`}
+          >
+            Logs
           </button>
         </div>
       </div>

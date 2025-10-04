@@ -75,12 +75,12 @@ const HistoryTable = ({ historyData }) => {
     .filter(({ actionDisplay }) => actionDisplay !== null);
 
   return (
-    <div className="shadow-lg rounded-lg" style={{ backgroundColor: '#c9c7c0' }}>
+    <div className="shadow-lg rounded-lg overflow-hidden" style={{ backgroundColor: '#c9c7c0' }}>
       <div className="px-6 py-4 border-b border-black">
         <h2 className="text-lg font-semibold" style={{ color: '#01796F' }}>Recent Changes</h2>
       </div>
       
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-b-lg">
         <table className="min-w-full divide-y divide-black">
           <thead style={{ backgroundColor: '#c9c7c0' }}>
             <tr>
