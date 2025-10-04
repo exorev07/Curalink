@@ -389,14 +389,14 @@ const Dashboard = ({ onNavigate }) => {
         
         switch (filter) {
           case 'available':
-            // Only truly unoccupied beds without cleaning are available
-            return effectiveStatus === BED_STATUSES.UNOCCUPIED;
+            // Only unassigned beds are truly available
+            return effectiveStatus === BED_STATUSES.UNASSIGNED;
           case 'occupied':
-            return bedData.status === BED_STATUSES.OCCUPIED || bedData.status === BED_STATUSES.OCCUPIED_CLEANING;
+            return effectiveStatus === BED_STATUSES.OCCUPIED || effectiveStatus === BED_STATUSES.OCCUPIED_CLEANING;
           case 'unoccupied':
-            return bedData.status === BED_STATUSES.UNOCCUPIED || bedData.status === BED_STATUSES.UNOCCUPIED_CLEANING;
+            return effectiveStatus === BED_STATUSES.UNOCCUPIED || effectiveStatus === BED_STATUSES.UNOCCUPIED_CLEANING;
           case 'cleaning':
-            return bedData.status === BED_STATUSES.OCCUPIED_CLEANING || bedData.status === BED_STATUSES.UNOCCUPIED_CLEANING;
+            return effectiveStatus === BED_STATUSES.OCCUPIED_CLEANING || effectiveStatus === BED_STATUSES.UNOCCUPIED_CLEANING;
           case 'ward-icu':
             return bedWard === WARD_TYPES.ICU;
           case 'ward-maternity':
