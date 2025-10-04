@@ -27,6 +27,17 @@ const Dashboard = ({ onNavigate }) => {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
+  // Initialize beds immediately after component mounts
+  useEffect(() => {
+    console.log('🏥 Initializing demo beds immediately');
+    const now = new Date().toISOString();
+    const initialBeds = { ...demoData.beds };
+    Object.keys(initialBeds).forEach(bedId => {
+      initialBeds[bedId].lastUpdate = now;
+    });
+    setBeds(initialBeds);
+  }, []);
+
   const handleNavigate = (page) => {
     onNavigate(page);
   };
@@ -190,35 +201,59 @@ const Dashboard = ({ onNavigate }) => {
         const bedsRef = ref(database, 'beds');
         const unsubscribeBeds = onValue(bedsRef, (snapshot) => {
           if (!mounted) return;
-          console.log('Beds data update received');
+          console.log('📊 Firebase beds listener triggered');
           const data = snapshot.val() || {};
           
-          // Initialize with demo data if beds are missing
-          const now = new Date().toISOString();
-          const updatedBeds = { ...demoData.beds };
-          
-          // Only update bed1 if it exists in Firebase
-          if (data[`bed${HARDWARE_BED_ID}`]) {
-            updatedBeds[`bed${HARDWARE_BED_ID}`] = {
-              ...updatedBeds[`bed${HARDWARE_BED_ID}`],
-              ...data[`bed${HARDWARE_BED_ID}`],
-              ward: WARD_TYPES.ICU
-            };
-          }
-          
-          // Set timestamps for all beds
-          Object.keys(updatedBeds).forEach(bedId => {
-            updatedBeds[bedId].lastUpdate = now;
+          setBeds(prevBeds => {
+            const now = new Date().toISOString();
+            let updatedBeds = { ...prevBeds };
+            
+            // Always ensure we have all demo beds (beds 1-6)
+            if (Object.keys(updatedBeds).length === 0) {
+              console.log('🏥 Initializing all demo beds (1-6)');
+              updatedBeds = { ...demoData.beds };
+              // Update timestamps for all demo beds
+              Object.keys(updatedBeds).forEach(bedId => {
+                updatedBeds[bedId].lastUpdate = now;
+              });
+            }
+            
+            // Only update bed1 if it exists in Firebase - PRESERVE existing sensorData
+            if (data[`bed${HARDWARE_BED_ID}`]) {
+              const existingBed = updatedBeds[`bed${HARDWARE_BED_ID}`] || {};
+              updatedBeds[`bed${HARDWARE_BED_ID}`] = {
+                ...existingBed, // Keep existing bed data including sensorData
+                ...data[`bed${HARDWARE_BED_ID}`], // Add Firebase data
+                ward: WARD_TYPES.ICU,
+                lastUpdate: now,
+                // CRITICAL: Preserve sensorData if it exists
+                ...(existingBed.sensorData ? { sensorData: existingBed.sensorData } : {})
+              };
+              console.log('🔧 Firebase preserved hardware sensorData for bed1');
+            }
+            
+            // Set timestamps for other beds
+            Object.keys(updatedBeds).forEach(bedId => {
+              if (bedId !== `bed${HARDWARE_BED_ID}`) {
+                updatedBeds[bedId].lastUpdate = now;
+              }
+            });
+            
+            return updatedBeds;
           });
-          
-          setBeds(updatedBeds);
           setShowSeedButton(false);
           setLoading(false);
         }, (error) => {
           console.error('Firebase beds error:', error);
           if (!mounted) return;
           // Fallback to demo data on error
-          setBeds(demoData.beds);
+          console.log('🔥 Firebase error - falling back to demo beds');
+          const now = new Date().toISOString();
+          const fallbackBeds = { ...demoData.beds };
+          Object.keys(fallbackBeds).forEach(bedId => {
+            fallbackBeds[bedId].lastUpdate = now;
+          });
+          setBeds(fallbackBeds);
           setHistory(demoData.history);
           setLoading(false);
         });

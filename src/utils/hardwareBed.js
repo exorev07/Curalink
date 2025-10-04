@@ -18,10 +18,51 @@ export const subscribeToHardwareBed = (onUpdate) => {
   if (!database) return () => {};
 
   const bedRef = ref(database, `beds/bed${HARDWARE_BED_ID}`);
+  let connectionTimeout;
   
   const handleBedUpdate = async (snapshot) => {
     const data = snapshot.val();
-    if (!data) return;
+    
+    console.log('🔧 Hardware bed Firebase data received:', data);
+    
+    // Clear any existing timeout
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+    }
+    
+    if (!data) {
+      console.log('❌ No Firebase data for hardware bed');
+      // No data means hardware is not connected
+      onUpdate(HARDWARE_BED_ID, {
+        status: 'unoccupied',
+        sensorData: {
+          fsrValue: 0,
+          temperature: 0,
+          hasBodyTemp: false,
+          hasWeight: false,
+          isOccupied: false,
+          online: false,
+          lastUpdate: Date.now()
+        }
+      });
+      return;
+    }
+
+    // Calculate data age for debugging
+    const dataAge = Date.now() - (data.lastUpdate || 0);
+    const isDataFresh = dataAge < 10000; // 10 seconds
+    
+    // If we're receiving Firebase data right now and online=true, hardware is connected
+    // The fact that Firebase listener triggered means we got recent data
+    const isHardwareOnline = data.online === true;
+    
+    console.log('🔍 Hardware connection check:', {
+      hasData: !!data,
+      dataAge: Math.round(dataAge / 1000) + ' seconds',
+      isDataFresh,
+      rawOnline: data.online,
+      isHardwareOnline
+    });
 
     // Convert hardware data to dashboard format
     const bedStatus = getBedStatusFromHardware(data);
@@ -37,7 +78,7 @@ export const subscribeToHardwareBed = (onUpdate) => {
           previousStatus: lastKnownStatus || 'unknown',
           newStatus: bedStatus,
           staffId: data.lastStaffId || null,  // Include staff ID if available
-          source: 'hardware',
+          source: isHardwareOnline ? 'hardware' : 'hardware_stale',
           details: `${lastKnownStatus || 'unknown'} to ${bedStatus}`
         });
         lastKnownStatus = bedStatus;
@@ -53,14 +94,33 @@ export const subscribeToHardwareBed = (onUpdate) => {
       hasBodyTemp: data.hasBodyTemp || false,
       hasWeight: data.hasWeight || false,
       isOccupied: data.isOccupied || false,
-      online: data.online || false,
-      lastUpdate: data.lastUpdate || Date.now()
+      online: isHardwareOnline,
+      lastUpdate: Date.now() // Always use current time since we just received this data
     };
+
+    console.log('✅ Updating bed with sensor data:', { bedStatus, online: isHardwareOnline });
 
     onUpdate(HARDWARE_BED_ID, {
       status: bedStatus,
       sensorData
     });
+    
+    // Set a timeout to mark as offline if no updates received (fast response)
+    connectionTimeout = setTimeout(() => {
+      console.log('⏰ Hardware timeout - marking as offline after 12 seconds');
+      onUpdate(HARDWARE_BED_ID, {
+        status: 'unoccupied',
+        sensorData: {
+          fsrValue: 0,
+          temperature: 0,
+          hasBodyTemp: false,
+          hasWeight: false,
+          isOccupied: false,
+          online: false,
+          lastUpdate: Date.now()
+        }
+      });
+    }, 12000); // 12 seconds timeout
   };
 
   onValue(bedRef, handleBedUpdate);

@@ -210,9 +210,16 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
     }
   };
 
+  // Determine if hardware is offline
+  const isHardwareOffline = isHardwareBed && (!safeData.sensorData || !safeData.sensorData.online);
+  
   return (
     <>
-      <div className={`${getStatusColor(effectiveStatus)} rounded-lg shadow-lg p-6 text-white transition-all hover:shadow-xl relative flex flex-col h-full`}>
+      <div className={`${
+        isHardwareOffline 
+          ? 'bg-gray-500' // Grey background when hardware is offline
+          : getStatusColor(effectiveStatus)
+      } rounded-lg shadow-lg p-6 text-white transition-all hover:shadow-xl relative flex flex-col h-full`}>
         {/* Override indicator */}
         {hasOverride && (
           <div className="absolute top-2 right-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded">
@@ -233,38 +240,47 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
         </div>
         
         <div className="space-y-2 text-sm flex-grow">
-          {isHardwareBed && bedData.sensorData ? (
+          {isHardwareBed ? (
             <>
               <div>
                 <strong>Sensor Status:</strong>
                 <br />
                 <span className={`inline-block px-2 py-1 text-xs rounded ${
-                  bedData.sensorData.online ? 'bg-green-500 bg-opacity-30' : 'bg-red-500 bg-opacity-30'
+                  (bedData.sensorData && bedData.sensorData.online) ? 'bg-green-500 bg-opacity-30' : 'bg-red-500 bg-opacity-30'
                 }`}>
-                  {bedData.sensorData.online ? '🟢 Connected' : '🔴 Offline'}
+                  {(bedData.sensorData && bedData.sensorData.online) ? '🟢 Connected' : '🔴 Hardware Not Connected'}
                 </span>
               </div>
-              <div>
-                <strong>Temperature:</strong>
-                <br />
-                {bedData.sensorData.temperature.toFixed(1)}°C
-                {bedData.sensorData.hasBodyTemp && 
-                  <span className="ml-2 text-yellow-300">⚡ Body heat detected</span>
-                }
-              </div>
-              <div>
-                <strong>Pressure:</strong>
-                <br />
-                {bedData.sensorData.fsrValue}
-                {bedData.sensorData.hasWeight && 
-                  <span className="ml-2 text-yellow-300">⚡ Weight detected</span>
-                }
-              </div>
-              <div>
-                <strong>Last Updated:</strong>
-                <br />
-                {formatTimestamp(bedData.sensorData.lastUpdate)}
-              </div>
+              {bedData.sensorData && bedData.sensorData.online ? (
+                <>
+                  <div>
+                    <strong>Temperature:</strong>
+                    <br />
+                    {bedData.sensorData.temperature.toFixed(1)}°C
+                    {bedData.sensorData.hasBodyTemp && 
+                      <span className="ml-2 text-yellow-300">⚡ Body heat detected</span>
+                    }
+                  </div>
+                  <div>
+                    <strong>Pressure:</strong>
+                    <br />
+                    {bedData.sensorData.fsrValue}
+                    {bedData.sensorData.hasWeight && 
+                      <span className="ml-2 text-yellow-300">⚡ Weight detected</span>
+                    }
+                  </div>
+                  <div>
+                    <strong>Last Updated:</strong>
+                    <br />
+                    {formatTimestamp(bedData.sensorData.lastUpdate)}
+                  </div>
+                </>
+              ) : (
+                <div className="text-gray-300">
+                  <p>Hardware sensors are not connected.</p>
+                  <p>Please ensure the ESP8266 device is powered on and connected to the network.</p>
+                </div>
+              )}
             </>
           ) : (
             <div>
