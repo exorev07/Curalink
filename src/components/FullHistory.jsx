@@ -10,8 +10,8 @@ const FullHistory = ({ onBack, historyData }) => {
     <div className="min-h-screen" style={{ backgroundColor: '#e9eae0' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
             <button
               onClick={onBack}
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
@@ -21,11 +21,11 @@ const FullHistory = ({ onBack, historyData }) => {
               </svg>
               <span>Back to Dashboard</span>
             </button>
-            <h1 className="text-3xl font-bold text-gray-800">Complete Change History</h1>
+            <div className="text-sm text-gray-600">
+              Total Changes: {historyData.length}
+            </div>
           </div>
-          <div className="text-sm text-gray-600">
-            Total Changes: {historyData.length}
-          </div>
+          <h1 className="text-3xl font-bold text-gray-800 text-center">Complete Change History</h1>
         </div>
 
         {/* Info Banner */}
