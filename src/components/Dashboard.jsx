@@ -693,9 +693,9 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
               </div>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium" style={{ color: '#01796F' }}>Hardware-Integrated Status</h3>
+              <h3 className="text-sm font-medium" style={{ color: '#01796F' }}>Hardware-Integrated Status for BED1 (Demonstration)</h3>
               <p className="text-sm" style={{ color: '#01796F' }}>
-                Bed statuses are automatically updated by ESP8266 hardware sensors. 
+                Bed status is automatically updated by ESP8266 based hardware setup. 
                 Use <span className="font-bold">Assign Patient</span> and <span className="font-bold">Supervisor Override</span> for manual management.
               </p>
             </div>
