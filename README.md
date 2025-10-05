@@ -1,6 +1,11 @@
 # 🏥 CuraLink - Smart Hospital Bed Management System
 
-A comprehensive IoT-enabled hospital bed occupancy management system with real-time hardware integration, ML-powered predictions, and intelligent dashboard monitoring for efficient healthcare resource management.
+A comprehens- 🟢 **Unoccupied** - Patient assigned but temporarily away from bed
+- 🔴 **Occupied** - Patient currently on the bed  
+- 🟠 **Occupied (Cleaning)** - Patient on bed that requires cleaning
+- 🟡 **Unoccupied (Cleaning)** - Empty bed that needs cleaning
+- ⚫ **Unassigned** - Bed available for new patient assignment
+- 🔘 **Hardware Offline** - ESP8266 sensor disconnected (Bed 1 only)T-enabled hospital bed occupancy management system with real-time hardware integration, ML-powered predictions, and intelligent dashboard monitoring for efficient healthcare resource management.
 
 ## 🏥 System Components
 
