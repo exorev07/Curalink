@@ -616,7 +616,7 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
           </div>
           <div className="p-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 relative group flex items-center justify-center min-h-[100px]" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
             <div className="flex flex-col items-center justify-center">
-              <div className="text-2xl font-bold text-orange-600">{statusCounts.cleaning}</div>
+              <div className="text-2xl font-bold text-gray-600">{statusCounts.cleaning}</div>
               <div className="mt-2" style={{ color: '#01796F' }}>Cleaning</div>
             </div>
 

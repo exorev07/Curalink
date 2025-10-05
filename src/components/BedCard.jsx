@@ -256,13 +256,13 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
                   <div>
                     <strong>Temperature:</strong> {bedData.sensorData.temperature.toFixed(1)}°C
                     {bedData.sensorData.hasBodyTemp && 
-                      <span className="ml-2 text-yellow-300">⚡ Body heat detected</span>
+                      <div className="text-yellow-300 text-sm">Body heat detected</div>
                     }
                   </div>
                   <div>
                     <strong>Pressure:</strong> {bedData.sensorData.fsrValue}
                     {bedData.sensorData.hasWeight && 
-                      <span className="ml-2 text-yellow-300">⚡ Weight detected</span>
+                      <div className="text-yellow-300 text-sm">Body weight detected</div>
                     }
                   </div>
                   <div>
