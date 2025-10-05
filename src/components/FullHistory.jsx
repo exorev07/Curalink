@@ -25,7 +25,7 @@ const FullHistory = ({ onBack, historyData }) => {
               Total Changes: {historyData.length}
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 text-center">Complete Change History</h1>
+          <h1 className="text-3xl font-bold text-center" style={{ color: '#01796F' }}>Complete Change History</h1>
         </div>
 
         {/* Info Banner */}

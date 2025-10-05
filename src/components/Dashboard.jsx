@@ -433,7 +433,16 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
       unassigned: 0
     };
 
-    Object.values(beds).forEach(bed => {
+    Object.entries(beds).forEach(([bedId, bed]) => {
+      // Check if this is a hardware bed that's offline
+      const isHardwareBed = parseInt(bedId.replace('bed', '')) === 1; // Bed 1 is hardware bed
+      const isHardwareOffline = isHardwareBed && (!bed.sensorData || !bed.sensorData.online);
+      
+      // If hardware bed is offline, don't count it in any status category
+      if (isHardwareOffline) {
+        return; // Skip this bed in counting
+      }
+      
       const effectiveStatus = getEffectiveBedStatus(bed);
       
       // Count by effective status
@@ -790,18 +799,31 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
               {Object.entries(groupBedsByWard(filteredBeds)).map(([ward, wardBeds]) => {
                 // Calculate status counts for this ward
                 const wardStatusCounts = {
-                  occupied: Object.values(wardBeds).filter(bed => 
-                    getEffectiveBedStatus(bed) === 'occupied'
-                  ).length,
-                  occupied_cleaning: Object.values(wardBeds).filter(bed => 
-                    getEffectiveBedStatus(bed) === 'occupied-cleaning'
-                  ).length,
-                  unoccupied: Object.values(wardBeds).filter(bed => 
-                    getEffectiveBedStatus(bed) === 'unoccupied'
-                  ).length,
-                  cleaning: Object.values(wardBeds).filter(bed => 
-                    getEffectiveBedStatus(bed) === 'unoccupied-cleaning'
-                  ).length
+                  occupied: Object.entries(wardBeds).filter(([bedId, bed]) => {
+                    const isHardwareBed = parseInt(bedId.replace('bed', '')) === 1;
+                    const isHardwareOffline = isHardwareBed && (!bed.sensorData || !bed.sensorData.online);
+                    return !isHardwareOffline && getEffectiveBedStatus(bed) === 'occupied';
+                  }).length,
+                  occupied_cleaning: Object.entries(wardBeds).filter(([bedId, bed]) => {
+                    const isHardwareBed = parseInt(bedId.replace('bed', '')) === 1;
+                    const isHardwareOffline = isHardwareBed && (!bed.sensorData || !bed.sensorData.online);
+                    return !isHardwareOffline && getEffectiveBedStatus(bed) === 'occupied_cleaning';
+                  }).length,
+                  unoccupied: Object.entries(wardBeds).filter(([bedId, bed]) => {
+                    const isHardwareBed = parseInt(bedId.replace('bed', '')) === 1;
+                    const isHardwareOffline = isHardwareBed && (!bed.sensorData || !bed.sensorData.online);
+                    return !isHardwareOffline && getEffectiveBedStatus(bed) === 'unoccupied';
+                  }).length,
+                  unoccupied_cleaning: Object.entries(wardBeds).filter(([bedId, bed]) => {
+                    const isHardwareBed = parseInt(bedId.replace('bed', '')) === 1;
+                    const isHardwareOffline = isHardwareBed && (!bed.sensorData || !bed.sensorData.online);
+                    return !isHardwareOffline && getEffectiveBedStatus(bed) === 'unoccupied_cleaning';
+                  }).length,
+                  unassigned: Object.entries(wardBeds).filter(([bedId, bed]) => {
+                    const isHardwareBed = parseInt(bedId.replace('bed', '')) === 1;
+                    const isHardwareOffline = isHardwareBed && (!bed.sensorData || !bed.sensorData.online);
+                    return !isHardwareOffline && getEffectiveBedStatus(bed) === 'unassigned';
+                  }).length
                 };
 
                 if (ward === 'ICU') {
@@ -820,23 +842,35 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
                             </span>
                           </h3>
                         </div>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-3">
                           {wardStatusCounts.occupied > 0 && (
                             <div className="flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-red-600 mr-2"></span>
+                              <span className="w-2 h-2 rounded-full bg-red-600 mr-1"></span>
                               <span style={{ color: '#01796F' }}>{wardStatusCounts.occupied}</span>
+                            </div>
+                          )}
+                          {wardStatusCounts.occupied_cleaning > 0 && (
+                            <div className="flex items-center">
+                              <span className="w-2 h-2 rounded-full bg-orange-500 mr-1"></span>
+                              <span style={{ color: '#01796F' }}>{wardStatusCounts.occupied_cleaning}</span>
                             </div>
                           )}
                           {wardStatusCounts.unoccupied > 0 && (
                             <div className="flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-[#2E8B57] mr-2"></span>
+                              <span className="w-2 h-2 rounded-full bg-[#2E8B57] mr-1"></span>
                               <span style={{ color: '#01796F' }}>{wardStatusCounts.unoccupied}</span>
                             </div>
                           )}
-                          {wardStatusCounts.cleaning > 0 && (
+                          {wardStatusCounts.unoccupied_cleaning > 0 && (
                             <div className="flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
-                              <span style={{ color: '#01796F' }}>{wardStatusCounts.cleaning}</span>
+                              <span className="w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>
+                              <span style={{ color: '#01796F' }}>{wardStatusCounts.unoccupied_cleaning}</span>
+                            </div>
+                          )}
+                          {wardStatusCounts.unassigned > 0 && (
+                            <div className="flex items-center">
+                              <span className="w-2 h-2 rounded-full bg-gray-500 mr-1"></span>
+                              <span style={{ color: '#01796F' }}>{wardStatusCounts.unassigned}</span>
                             </div>
                           )}
                           <svg 
@@ -870,7 +904,6 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
                   );
                 } else {
                   const wardColor = ward === 'Maternity' ? '#ec4899' : '#3b82f6';
-                  const showMaternityOccupiedCleaning = ward === 'Maternity' && wardStatusCounts.occupied_cleaning > 0;
                   return (
                     <div key={ward} className={`rounded-lg border-2 overflow-hidden transition-all duration-300 ${WARD_COLORS[ward] || WARD_COLORS[WARD_TYPES.GENERAL]}`}>
                       <button
@@ -887,29 +920,35 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
                             </span>
                           </h3>
                         </div>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-3">
                           {wardStatusCounts.occupied > 0 && (
                             <div className="flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-red-600 mr-2"></span>
+                              <span className="w-2 h-2 rounded-full bg-red-600 mr-1"></span>
                               <span style={{ color: '#01796F' }}>{wardStatusCounts.occupied}</span>
                             </div>
                           )}
-                          {showMaternityOccupiedCleaning && (
+                          {wardStatusCounts.occupied_cleaning > 0 && (
                             <div className="flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-orange-500 mr-2"></span>
+                              <span className="w-2 h-2 rounded-full bg-orange-500 mr-1"></span>
                               <span style={{ color: '#01796F' }}>{wardStatusCounts.occupied_cleaning}</span>
                             </div>
                           )}
                           {wardStatusCounts.unoccupied > 0 && (
                             <div className="flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-[#2E8B57] mr-2"></span>
+                              <span className="w-2 h-2 rounded-full bg-[#2E8B57] mr-1"></span>
                               <span style={{ color: '#01796F' }}>{wardStatusCounts.unoccupied}</span>
                             </div>
                           )}
-                          {wardStatusCounts.cleaning > 0 && (
+                          {wardStatusCounts.unoccupied_cleaning > 0 && (
                             <div className="flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
-                              <span style={{ color: '#01796F' }}>{wardStatusCounts.cleaning}</span>
+                              <span className="w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>
+                              <span style={{ color: '#01796F' }}>{wardStatusCounts.unoccupied_cleaning}</span>
+                            </div>
+                          )}
+                          {wardStatusCounts.unassigned > 0 && (
+                            <div className="flex items-center">
+                              <span className="w-2 h-2 rounded-full bg-gray-500 mr-1"></span>
+                              <span style={{ color: '#01796F' }}>{wardStatusCounts.unassigned}</span>
                             </div>
                           )}
                           <svg 
