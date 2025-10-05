@@ -69,17 +69,27 @@ export const subscribeToHardwareBed = (onUpdate) => {
     
     // Log if status has changed and we're not already logging
     const now = Date.now();
-    if (lastKnownStatus !== bedStatus && 
+    const isComingBackOnline = lastKnownStatus === 'hardware offline' && isHardwareOnline;
+    
+    if ((lastKnownStatus !== bedStatus || isComingBackOnline) && 
         !isLoggingStatus && 
         (now - lastLogTime) >= LOG_DEBOUNCE_TIME) {
       try {
         isLoggingStatus = true;
+        
+        let logDetails;
+        if (isComingBackOnline) {
+          logDetails = `hardware reconnected - ${bedStatus}`;
+        } else {
+          logDetails = `${lastKnownStatus || 'unknown'} to ${bedStatus}`;
+        }
+        
         await logBedAction(`bed${HARDWARE_BED_ID}`, 'status_change', {
           previousStatus: lastKnownStatus || 'unknown',
           newStatus: bedStatus,
-          staffId: data.lastStaffId || null,  // Include staff ID if available
+          staffId: data.lastStaffId || null,
           source: isHardwareOnline ? 'hardware' : 'hardware_stale',
-          details: `${lastKnownStatus || 'unknown'} to ${bedStatus}`
+          details: logDetails
         });
         lastKnownStatus = bedStatus;
         lastLogTime = now;
@@ -106,8 +116,26 @@ export const subscribeToHardwareBed = (onUpdate) => {
     });
     
     // Set a timeout to mark as offline if no updates received (fast response)
-    connectionTimeout = setTimeout(() => {
+    connectionTimeout = setTimeout(async () => {
       console.log('⏰ Hardware timeout - marking as offline after 12 seconds');
+      
+      // Log the hardware going offline
+      if (lastKnownStatus && !isLoggingStatus) {
+        try {
+          isLoggingStatus = true;
+          await logBedAction(`bed${HARDWARE_BED_ID}`, 'status_change', {
+            previousStatus: lastKnownStatus,
+            newStatus: 'hardware offline',
+            staffId: null,
+            source: 'hardware_timeout',
+            details: `${lastKnownStatus} to hardware offline`
+          });
+          lastKnownStatus = 'hardware offline';
+        } finally {
+          isLoggingStatus = false;
+        }
+      }
+      
       onUpdate(HARDWARE_BED_ID, {
         status: 'unoccupied',
         sensorData: {
