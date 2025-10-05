@@ -220,27 +220,35 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
               });
             }
             
-            // Only update bed1 if it exists in Firebase - PRESERVE existing sensorData
-            if (data[`bed${HARDWARE_BED_ID}`]) {
-              const existingBed = updatedBeds[`bed${HARDWARE_BED_ID}`] || {};
-              updatedBeds[`bed${HARDWARE_BED_ID}`] = {
-                ...existingBed, // Keep existing bed data including sensorData
-                ...data[`bed${HARDWARE_BED_ID}`], // Add Firebase data
-                ward: WARD_TYPES.ICU,
+            // Update beds from Firebase data while preserving critical local state
+            Object.keys(data).forEach(bedId => {
+              const existingBed = updatedBeds[bedId] || {};
+              const firebaseBed = data[bedId];
+              
+              updatedBeds[bedId] = {
+                ...existingBed, // Keep existing bed data
+                ...firebaseBed, // Add Firebase data
                 lastUpdate: now,
-                // CRITICAL: Preserve sensorData if it exists
-                ...(existingBed.sensorData ? { sensorData: existingBed.sensorData } : {})
+                // CRITICAL: Preserve sensorData for hardware bed
+                ...(bedId === `bed${HARDWARE_BED_ID}` && existingBed.sensorData ? 
+                    { sensorData: existingBed.sensorData } : {}),
+                // CRITICAL: Preserve supervisor override state for all beds
+                ...(existingBed.supervisorOverride ? 
+                    { 
+                      supervisorOverride: existingBed.supervisorOverride,
+                      originalStatus: existingBed.originalStatus || existingBed.status
+                    } : {})
               };
-              console.log('🔧 Firebase preserved hardware sensorData for bed1');
-            }
+            });
             
-            // Set timestamps for other beds
+            // Set timestamps for beds not in Firebase data
             Object.keys(updatedBeds).forEach(bedId => {
-              if (bedId !== `bed${HARDWARE_BED_ID}`) {
+              if (!data[bedId]) {
                 updatedBeds[bedId].lastUpdate = now;
               }
             });
             
+            console.log('🔧 Firebase listener preserved supervisor overrides and hardware data');
             return updatedBeds;
           });
           setShowSeedButton(false);

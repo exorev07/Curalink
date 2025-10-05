@@ -130,38 +130,38 @@ export const unassignPatientFromBed = async (bedId, unassignedBy, reason = 'manu
 
 // Supervisor override functions
 export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorData, updateLocalHistory = null, updateBedsData = null) => {
-  // If it's not bed1 (hardware bed) OR we're in demo mode, use local updates
-  if (bedId !== 'bed1' || isDemoMode || !database) {
-    console.log('Demo mode: Would override bed status', bedId, newStatus, supervisorData);
-    
-    // In demo mode, update the local bed data if callback provided
-    if (updateBedsData) {
-      const now = new Date().toISOString();
-      updateBedsData(prevBeds => ({
-        ...prevBeds,
-        [bedId]: {
-          ...prevBeds[bedId],
+  // Always update local data first for immediate UI feedback
+  if (updateBedsData) {
+    const now = new Date().toISOString();
+    updateBedsData(prevBeds => ({
+      ...prevBeds,
+      [bedId]: {
+        ...prevBeds[bedId],
+        status: newStatus,
+        lastUpdate: now,
+        override: {
           status: newStatus,
-          lastUpdate: now,
-          override: {
-            status: newStatus,
-            employeeId: supervisorData.employeeId,
-            previousStatus: supervisorData.previousStatus,
-            reason: supervisorData.reason,
-            timestamp: now,
-            active: true
-          }
+          employeeId: supervisorData.employeeId,
+          previousStatus: supervisorData.previousStatus,
+          reason: supervisorData.reason,
+          timestamp: now,
+          active: true
         }
-      }));
-    }
-    
-    // In demo mode, call the logging function with local history callback
-    await logBedAction(bedId, 'supervisor_override', {
-      newStatus,
-      previousStatus: supervisorData.previousStatus,
-      employeeId: supervisorData.employeeId,
-      reason: supervisorData.reason
-    }, updateLocalHistory);
+      }
+    }));
+  }
+  
+  // Always log the action
+  await logBedAction(bedId, 'supervisor_override', {
+    newStatus,
+    previousStatus: supervisorData.previousStatus,
+    employeeId: supervisorData.employeeId,
+    reason: supervisorData.reason
+  }, updateLocalHistory);
+  
+  // If no database available, return after local updates
+  if (!database) {
+    console.log('No database: Override updated locally only', bedId);
     return;
   }
 
@@ -231,32 +231,33 @@ export const clearSupervisorOverride = async (bedId, supervisorId) => {
 
 // Helper function to log bed actions
 export const logBedAction = async (bedId, action, data, updateLocalHistory = null) => {
-  if (isDemoMode || !database) {
-    console.log('Demo mode: Would log action', bedId, action, data);
-    
-    // In demo mode, update local history if callback provided
-    if (updateLocalHistory) {
-      const historyEntry = {
-        bedId,
-        action,
-        data,
-        timestamp: new Date().toISOString()
-      };
-      updateLocalHistory(historyEntry);
-    }
-    return;
-  }
-
-  try {
-    const historyRef = ref(database, 'bedHistory');
-    await push(historyRef, {
+  // Always update local history first if callback provided
+  if (updateLocalHistory) {
+    const historyEntry = {
       bedId,
       action,
       data,
-      timestamp: serverTimestamp()
-    });
-  } catch (error) {
-    console.error('Error logging bed action:', error);
+      timestamp: new Date().toISOString()
+    };
+    updateLocalHistory(historyEntry);
+  }
+  
+  // Always try to log to Firebase if database is available
+  if (database) {
+    try {
+      const historyRef = ref(database, 'bedHistory');
+      await push(historyRef, {
+        bedId,
+        action,
+        data,
+        timestamp: serverTimestamp()
+      });
+      console.log('✅ Logged to Firebase:', bedId, action);
+    } catch (error) {
+      console.error('Error logging bed action to Firebase:', error);
+    }
+  } else {
+    console.log('No database: Logged locally only', bedId, action, data);
   }
 };
 
