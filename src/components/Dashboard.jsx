@@ -9,10 +9,11 @@ import { getEffectiveBedStatus, checkAndUnassignExpiredPatients } from '../fireb
 import { BED_STATUSES, WARD_TYPES, WARD_COLORS } from '../utils/bedUtils';
 import { subscribeToHardwareBed, HARDWARE_BED_ID } from '../utils/hardwareBed';
 
+// Filter options ordered by priority: All → Available → Occupied → Unoccupied → Cleaning
 const filterOptions = [
   { value: 'all', label: 'All Beds' },
-  { value: 'occupied', label: 'Occupied' },
   { value: 'available', label: 'Available' },
+  { value: 'occupied', label: 'Occupied' },
   { value: 'unoccupied', label: 'Unoccupied' },
   { value: 'cleaning', label: 'Cleaning' },
   { value: 'group', group: 'By Ward' },
@@ -85,9 +86,9 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
         cleaningStaff: ''
       },
       bed4: {
-        status: 'occupied',
+        status: 'unassigned',
         ward: WARD_TYPES.MATERNITY,
-        lastUpdate: '2025-09-02T11:15:00',
+        lastUpdate: '2025-10-05T11:15:00',
         assignedNurse: '',
         cleaningStaff: ''
       },
@@ -719,8 +720,8 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
               className="border rounded-md px-3 py-2 text-sm focus:outline-none hover:shadow-md transition-all duration-200 cursor-pointer"
             >
               <option value="all" className="hover:scale-105">All Beds</option>
-              <option value="occupied">Occupied</option>
               <option value="available">Available</option>
+              <option value="occupied">Occupied</option>
               <option value="unoccupied">Unoccupied</option>
               <option value="cleaning">Cleaning</option>
               <optgroup label="By Ward" style={{ color: '#01796F', backgroundColor: '#e9eae0' }}>

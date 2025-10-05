@@ -235,7 +235,7 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
             </p>
           </div>
           <span className="text-sm bg-white bg-opacity-20 px-2 py-1 rounded">
-            {getStatusLabel(effectiveStatus)}
+            {isHardwareOffline ? 'Hardware Offline' : getStatusLabel(effectiveStatus)}
           </span>
         </div>
         
@@ -254,17 +254,13 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
               {bedData.sensorData && bedData.sensorData.online ? (
                 <>
                   <div>
-                    <strong>Temperature:</strong>
-                    <br />
-                    {bedData.sensorData.temperature.toFixed(1)}°C
+                    <strong>Temperature:</strong> {bedData.sensorData.temperature.toFixed(1)}°C
                     {bedData.sensorData.hasBodyTemp && 
                       <span className="ml-2 text-yellow-300">⚡ Body heat detected</span>
                     }
                   </div>
                   <div>
-                    <strong>Pressure:</strong>
-                    <br />
-                    {bedData.sensorData.fsrValue}
+                    <strong>Pressure:</strong> {bedData.sensorData.fsrValue}
                     {bedData.sensorData.hasWeight && 
                       <span className="ml-2 text-yellow-300">⚡ Weight detected</span>
                     }
