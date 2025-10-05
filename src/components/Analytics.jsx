@@ -178,7 +178,8 @@ const Analytics = ({ onBack }) => {
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={onBack}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+              className="border-2 rounded-lg px-4 py-2 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex items-center space-x-2"
+              style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890', color: '#01796F' }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

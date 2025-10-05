@@ -14,7 +14,8 @@ const FullHistory = ({ onBack, historyData }) => {
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={onBack}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+              className="border-2 rounded-lg px-4 py-2 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex items-center space-x-2"
+              style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890', color: '#01796F' }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -29,16 +30,16 @@ const FullHistory = ({ onBack, historyData }) => {
         </div>
 
         {/* Info Banner */}
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="mb-8 border-2 rounded-lg p-4" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#01796F' }}>
                 <span className="text-white text-sm font-medium">📋</span>
               </div>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">Complete History View</h3>
-              <p className="text-sm text-blue-700">
+              <h3 className="text-sm font-medium" style={{ color: '#01796F' }}>Complete History View</h3>
+              <p className="text-sm text-gray-600">
                 This view shows all bed status changes, patient assignments, and supervisor overrides in chronological order.
               </p>
             </div>
@@ -46,9 +47,9 @@ const FullHistory = ({ onBack, historyData }) => {
         </div>
 
         {/* Full History Table */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800">All Changes</h2>
+        <div className="border-2 rounded-lg shadow-lg overflow-hidden" style={{ backgroundColor: '#c9c7c0', borderColor: '#9a9890' }}>
+          <div className="px-6 py-4 border-b-2" style={{ backgroundColor: '#e9eae0', borderColor: '#9a9890' }}>
+            <h2 className="text-lg font-semibold" style={{ color: '#01796F' }}>All Changes</h2>
             <p className="text-sm text-gray-600">Complete log of all bed management activities</p>
           </div>
           <div className="p-6">
