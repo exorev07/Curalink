@@ -69,7 +69,7 @@ A comprehensive IoT-enabled hospital bed occupancy management system with real-t
 - 🟢 **Unoccupied** - Patient assigned but temporarily away from bed
 - 🔴 **Occupied** - Patient currently on the bed  
 - 🟠 **Occupied (Cleaning)** - Patient on bed that requires cleaning
-- � **Unoccupied (Cleaning)** - Empty bed that needs cleaning
+- 🟡 **Unoccupied (Cleaning)** - Empty bed that needs cleaning
 - ⚫ **Unassigned** - Bed available for new patient assignment
 - 🔘 **Hardware Offline** - ESP8266 sensor disconnected (Bed 1 only)
 
@@ -79,14 +79,14 @@ A comprehensive IoT-enabled hospital bed occupancy management system with real-t
 - 💛 **Maternity Ward** - Maternity and obstetrics beds with custom status tracking
 - 🔵 **General Ward** - Standard patient care beds with automated cleaning status
 
-## � Documentation
+## 📚 Documentation
 
 - **[🤝 Collaboration Guide](docs/COLLABORATION.md)** - Team workflow and setup
 - **[🛠️ Development Guide](docs/DEVELOPMENT.md)** - Development workflow and guidelines  
 - **[🚀 Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment instructions
 - **[⚡ Hardware Setup](docs/HARDWARE.md)** - Hardware assembly and configuration
 
-## �🚀 Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
