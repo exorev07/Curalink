@@ -21,7 +21,7 @@ function AppContent() {
       case 'dashboard':
         return <Dashboard onNavigate={handleNavigate} sharedHistory={sharedHistory} setSharedHistory={setSharedHistory} />;
       case 'analytics':
-        return <Analytics />;
+        return <Analytics onBack={() => handleNavigate('dashboard')} />;
       case 'history':
         return <FullHistory onBack={() => handleNavigate('dashboard')} historyData={sharedHistory} />;
       default:
