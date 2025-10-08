@@ -232,12 +232,20 @@ const Dashboard = ({ onNavigate, sharedHistory, setSharedHistory }) => {
                 // CRITICAL: Preserve sensorData for hardware bed
                 ...(bedId === `bed${HARDWARE_BED_ID}` && existingBed.sensorData ? 
                     { sensorData: existingBed.sensorData } : {}),
-                // CRITICAL: Preserve supervisor override state for all beds
-                ...(existingBed.supervisorOverride ? 
-                    { 
-                      supervisorOverride: existingBed.supervisorOverride,
-                      originalStatus: existingBed.originalStatus || existingBed.status
-                    } : {})
+                // CRITICAL: Preserve supervisor override state only if Firebase has override data
+                ...(firebaseBed.override || firebaseBed.supervisorOverride ? 
+                    {
+                      ...(firebaseBed.override ? { override: firebaseBed.override } : {}),
+                      ...(firebaseBed.supervisorOverride ? { supervisorOverride: firebaseBed.supervisorOverride } : {}),
+                      ...(firebaseBed.originalStatus ? { originalStatus: firebaseBed.originalStatus } : {})
+                    } : 
+                    // If no Firebase override data, clear any local override state
+                    {
+                      override: null,
+                      supervisorOverride: null,
+                      originalStatus: null
+                    }
+                )
               };
             });
             

@@ -5,6 +5,7 @@ import {
   assignPatientToBed, 
   unassignPatientFromBed, 
   supervisorOverrideBedStatus,
+  clearSupervisorOverride,
   getEffectiveBedStatus,
   hasActivePatientAssignment,
   isPatientAssignmentExpired,
@@ -31,6 +32,11 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
   const [password, setPassword] = useState('');
   const [employeeIdError, setEmployeeIdError] = useState('');
   const [authError, setAuthError] = useState('');
+  const [showClearOverrideModal, setShowClearOverrideModal] = useState(false);
+  const [clearEmployeeId, setClearEmployeeId] = useState('');
+  const [clearPassword, setClearPassword] = useState('');
+  const [clearEmployeeIdError, setClearEmployeeIdError] = useState('');
+  const [clearAuthError, setClearAuthError] = useState('');
 
   // Create safe bed data with current timestamps
   const safeData = useMemo(() => {
@@ -73,7 +79,7 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
 
   const effectiveStatus = getEffectiveBedStatus(safeData);
   const hasPatient = hasActivePatientAssignment(safeData);
-  const hasOverride = bedData?.override?.active || false;
+  const hasOverride = (bedData?.override?.active) || (bedData?.supervisorOverride) || false;
 
   // Update timer every minute
   useEffect(() => {
@@ -210,6 +216,56 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
     }
   };
 
+  const handleClearOverride = async () => {
+    // Validate Employee ID is exactly 6 digits
+    if (!clearEmployeeId || clearEmployeeId.length !== 6) {
+      setClearEmployeeIdError('Employee ID must be exactly 6 digits');
+      return;
+    }
+
+    // Clear previous errors
+    setClearEmployeeIdError('');
+    setClearAuthError('');
+
+    // Validate required fields
+    if (!clearPassword.trim()) {
+      setClearAuthError('Please enter password');
+      return;
+    }
+
+    // Check authentication
+    const validEmployeeIds = ['220306', '130506'];
+    const validPassword = 'admin@123';
+
+    if (!validEmployeeIds.includes(clearEmployeeId) || clearPassword !== validPassword) {
+      setClearAuthError('Invalid Employee ID or password');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to clear the supervisor override for bed ${bedId}?\n\nThis will restore the bed to its original status.`
+    );
+    
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      await clearSupervisorOverride(bedId, clearEmployeeId, updateLocalHistory, updateBedsData);
+      
+      setShowClearOverrideModal(false);
+      // Clear all form fields
+      setClearEmployeeId('');
+      setClearPassword('');
+      setClearEmployeeIdError('');
+      setClearAuthError('');
+      onUpdate && onUpdate();
+    } catch (error) {
+      setClearAuthError('Error clearing supervisor override: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Determine if hardware is offline
   const isHardwareOffline = isHardwareBed && (!safeData.sensorData || !safeData.sensorData.online);
   
@@ -325,9 +381,9 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
             <div className="bg-yellow-200 bg-opacity-30 p-2 rounded text-yellow-100">
               <strong>Override Active:</strong>
               <br />
-              By Employee: {bedData.override.employeeId || bedData.override.supervisorId || 'Unknown'}
+              By Employee: {bedData.override?.employeeId || bedData.override?.supervisorId || bedData.supervisorOverride?.employeeId || 'Unknown'}
               <br />
-              Reason: {bedData.override.reason}
+              Reason: {bedData.override?.reason || bedData.supervisorOverride?.reason || 'No reason provided'}
             </div>
           )}
           
@@ -372,19 +428,44 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
           </div>
 
           {/* Supervisor Override */}
-          <button
-            onClick={() => setShowOverrideModal(true)}
-            disabled={loading}
-            className="w-full px-3 py-2 rounded text-sm font-medium disabled:opacity-50 text-gray-800 hover:text-gray-900"
-            style={{ 
-              backgroundColor: '#f7f2d2',
-              ':hover': { backgroundColor: '#ede8c0' }
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#ede8c0'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#f7f2d2'}
-          >
-            Supervisor Override
-          </button>
+          {!hasOverride ? (
+            <button
+              onClick={() => setShowOverrideModal(true)}
+              disabled={loading}
+              className="w-full px-3 py-2 rounded text-sm font-medium disabled:opacity-50 text-gray-800 hover:text-gray-900"
+              style={{ 
+                backgroundColor: '#f7f2d2',
+                ':hover': { backgroundColor: '#ede8c0' }
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#ede8c0'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#f7f2d2'}
+            >
+              Supervisor Override
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowOverrideModal(true)}
+                disabled={loading}
+                className="flex-1 px-3 py-2 rounded text-sm font-medium disabled:opacity-50 text-gray-800 hover:text-gray-900"
+                style={{ 
+                  backgroundColor: '#f7f2d2',
+                  ':hover': { backgroundColor: '#ede8c0' }
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#ede8c0'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#f7f2d2'}
+              >
+                Override Again
+              </button>
+              <button
+                onClick={() => setShowClearOverrideModal(true)}
+                disabled={loading}
+                className="flex-1 px-3 py-2 rounded text-sm font-medium disabled:opacity-50 bg-red-500 bg-opacity-80 hover:bg-opacity-100 text-white"
+              >
+                Clear Override
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -542,6 +623,96 @@ const BedCard = ({ bedId, bedData, onUpdate, updateLocalHistory, updateBedsData,
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
               >
                 {loading ? 'Applying...' : 'Apply Override'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Override Modal */}
+      {showClearOverrideModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Clear Override - {bedId.toUpperCase()}</h3>
+            
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
+              <p className="text-sm text-red-800">
+                <strong>Current Override:</strong> {getStatusLabel(effectiveStatus)}
+                <br />
+                This will restore the bed to its original status.
+                <br />
+                <strong>Action will be logged for audit purposes.</strong>
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
+                <input
+                  type="text"
+                  value={clearEmployeeId}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^\d{0,6}$/.test(value)) {
+                      setClearEmployeeId(value);
+                      setClearEmployeeIdError('');
+                      setClearAuthError('');
+                    }
+                  }}
+                  className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 ${
+                    clearEmployeeIdError 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
+                  placeholder="Enter 6-digit employee ID"
+                  maxLength="6"
+                />
+                {clearEmployeeIdError && (
+                  <p className="mt-1 text-sm text-red-600">{clearEmployeeIdError}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">Must be exactly 6 digits</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type="password"
+                  value={clearPassword}
+                  onChange={(e) => {
+                    setClearPassword(e.target.value);
+                    setClearAuthError('');
+                  }}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter password"
+                />
+              </div>
+
+              {clearAuthError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded">
+                  <p className="text-sm text-red-800">{clearAuthError}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowClearOverrideModal(false);
+                  setClearEmployeeId('');
+                  setClearPassword('');
+                  setClearEmployeeIdError('');
+                  setClearAuthError('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearOverride}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {loading ? 'Clearing...' : 'Clear Override'}
               </button>
             </div>
           </div>

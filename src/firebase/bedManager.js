@@ -206,23 +206,58 @@ export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorDa
   }
 };
 
-export const clearSupervisorOverride = async (bedId, supervisorId) => {
-  if (isDemoMode || !database) {
-    console.log('Demo mode: Would clear supervisor override for bed', bedId);
+export const clearSupervisorOverride = async (bedId, supervisorId, updateLocalHistory = null, updateBedsData = null) => {
+  // Always update local state first for immediate UI feedback
+  if (updateBedsData) {
+    const now = new Date().toISOString();
+    updateBedsData(prevBeds => ({
+      ...prevBeds,
+      [bedId]: {
+        ...prevBeds[bedId],
+        override: null,
+        supervisorOverride: null,
+        originalStatus: null,
+        lastUpdate: now
+      }
+    }));
+  }
+  
+  // If no database available, return after local updates
+  if (!database) {
+    console.log('No database: Override cleared locally only', bedId);
     return;
   }
 
   try {
-    const overrideRef = ref(database, `beds/${bedId}/override`);
-    await set(overrideRef, {
-      active: false,
-      clearedBy: supervisorId,
-      clearedAt: serverTimestamp()
-    });
+    // Get current bed data to find original status
+    const bedRef = ref(database, `beds/${bedId}`);
+    const snapshot = await get(bedRef);
+    const bedData = snapshot.val();
+    
+    // Remove all override-related properties
+    const updates = {};
+    updates[`beds/${bedId}/override`] = null;
+    updates[`beds/${bedId}/supervisorOverride`] = null;
+    updates[`beds/${bedId}/originalStatus`] = null;
+    
+    // Restore to previous status if available
+    let restoredStatus = null;
+    if (bedData?.override?.previousStatus) {
+      updates[`beds/${bedId}/status`] = bedData.override.previousStatus;
+      restoredStatus = bedData.override.previousStatus;
+    } else if (bedData?.supervisorOverride?.previousStatus) {
+      updates[`beds/${bedId}/status`] = bedData.supervisorOverride.previousStatus;
+      restoredStatus = bedData.supervisorOverride.previousStatus;
+    }
+    
+    await update(ref(database), updates);
 
     await logBedAction(bedId, 'override_cleared', {
-      clearedBy: supervisorId
-    });
+      clearedBy: supervisorId,
+      restoredStatus: restoredStatus || 'No previous status available'
+    }, updateLocalHistory);
+    
+    console.log('✅ Cleared supervisor override for', bedId, restoredStatus ? `restored to ${restoredStatus}` : '');
   } catch (error) {
     console.error('Error clearing supervisor override:', error);
     throw error;
