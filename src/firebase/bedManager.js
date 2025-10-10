@@ -193,13 +193,8 @@ export const supervisorOverrideBedStatus = async (bedId, newStatus, supervisorDa
       timestamp: serverTimestamp()
     });
 
-    // Log the action
-    await logBedAction(bedId, 'supervisor_override', {
-      newStatus,
-      previousStatus: supervisorData.previousStatus,
-      employeeId: supervisorData.employeeId,
-      reason: supervisorData.reason
-    });
+    // Note: logBedAction was already called earlier with updateLocalHistory callback
+    // No need to call it again here to avoid duplicate entries
   } catch (error) {
     console.error('Error applying supervisor override:', error);
     throw error;

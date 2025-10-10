@@ -46,7 +46,8 @@ const HistoryTable = ({ historyData }) => {
           return {
             label: 'Override Cleared',
             color: 'bg-green-100 text-green-800',
-            details: entry.data?.clearedBy || 'System'
+            details: '-',
+            staffId: entry.data?.clearedBy || 'System'
           };
         case 'status_change':
           return {
