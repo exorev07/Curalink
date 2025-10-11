@@ -12,7 +12,8 @@ import { logBedAction } from '../firebase/bedManager';
 let lastKnownStatus = null;
 let isLoggingStatus = false;
 let lastLogTime = 0;
-const LOG_DEBOUNCE_TIME = 1000; // 1 second debounce
+const LOG_DEBOUNCE_TIME = 3000; // 3 second debounce to prevent rapid duplicate logs
+let lastLoggedTransition = null; // Track the exact transition to prevent duplicates
 
 export const subscribeToHardwareBed = (onUpdate) => {
   if (!database) return () => {};
@@ -67,13 +68,20 @@ export const subscribeToHardwareBed = (onUpdate) => {
     // Convert hardware data to dashboard format
     const bedStatus = getBedStatusFromHardware(data);
     
-    // Log if status has changed and we're not already logging
+    // Log if status has changed and prevent duplicate logging
     const now = Date.now();
     const isComingBackOnline = lastKnownStatus === 'hardware offline' && isHardwareOnline;
+    const currentTransition = `${lastKnownStatus || 'unknown'}->${bedStatus}`;
     
-    if ((lastKnownStatus !== bedStatus || isComingBackOnline) && 
-        !isLoggingStatus && 
-        (now - lastLogTime) >= LOG_DEBOUNCE_TIME) {
+    // Enhanced duplicate prevention: check status change, logging state, debounce time, and exact transition
+    const shouldLog = (
+      (lastKnownStatus !== bedStatus || isComingBackOnline) && 
+      !isLoggingStatus && 
+      (now - lastLogTime) >= LOG_DEBOUNCE_TIME &&
+      lastLoggedTransition !== currentTransition // Prevent exact same transition
+    );
+    
+    if (shouldLog) {
       try {
         isLoggingStatus = true;
         
@@ -84,6 +92,8 @@ export const subscribeToHardwareBed = (onUpdate) => {
           logDetails = `${lastKnownStatus || 'unknown'} to ${bedStatus}`;
         }
         
+        console.log('📝 Logging bed status change:', currentTransition);
+        
         await logBedAction(`bed${HARDWARE_BED_ID}`, 'status_change', {
           previousStatus: lastKnownStatus || 'unknown',
           newStatus: bedStatus,
@@ -91,11 +101,26 @@ export const subscribeToHardwareBed = (onUpdate) => {
           source: isHardwareOnline ? 'hardware' : 'hardware_stale',
           details: logDetails
         });
+        
+        // Update tracking variables
         lastKnownStatus = bedStatus;
         lastLogTime = now;
+        lastLoggedTransition = currentTransition;
+        
+      } catch (error) {
+        console.error('Error logging bed action:', error);
       } finally {
         isLoggingStatus = false;
       }
+    } else if (lastKnownStatus !== bedStatus) {
+      // Status changed but we're not logging due to debounce/duplicate prevention
+      console.log('⏭️ Skipping duplicate log for transition:', currentTransition, {
+        timeSinceLastLog: now - lastLogTime,
+        isLogging: isLoggingStatus,
+        isDuplicateTransition: lastLoggedTransition === currentTransition
+      });
+      // Still update the status for next comparison
+      lastKnownStatus = bedStatus;
     }
 
     const sensorData = {
@@ -119,8 +144,15 @@ export const subscribeToHardwareBed = (onUpdate) => {
     connectionTimeout = setTimeout(async () => {
       console.log('⏰ Hardware timeout - marking as offline after 12 seconds');
       
-      // Log the hardware going offline
-      if (lastKnownStatus && !isLoggingStatus) {
+      // Log the hardware going offline with enhanced duplicate prevention
+      const offlineTransition = `${lastKnownStatus}->${'hardware offline'}`;
+      const now = Date.now();
+      
+      if (lastKnownStatus && 
+          lastKnownStatus !== 'hardware offline' &&
+          !isLoggingStatus &&
+          (now - lastLogTime) >= LOG_DEBOUNCE_TIME &&
+          lastLoggedTransition !== offlineTransition) {
         try {
           isLoggingStatus = true;
           await logBedAction(`bed${HARDWARE_BED_ID}`, 'status_change', {
@@ -131,6 +163,10 @@ export const subscribeToHardwareBed = (onUpdate) => {
             details: `${lastKnownStatus} to hardware offline`
           });
           lastKnownStatus = 'hardware offline';
+          lastLogTime = now;
+          lastLoggedTransition = offlineTransition;
+        } catch (error) {
+          console.error('Error logging offline status:', error);
         } finally {
           isLoggingStatus = false;
         }

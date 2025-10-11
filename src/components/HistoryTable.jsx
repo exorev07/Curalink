@@ -69,8 +69,36 @@ const HistoryTable = ({ historyData }) => {
     }
   };
 
-  // Sort history by timestamp (newest first) and filter out legacy entries
-  const sortedHistory = [...historyData]
+  // Deduplicate entries within a 3-second window
+  const deduplicateEntries = (entries) => {
+    const deduplicated = [];
+    const DEDUP_WINDOW = 3000; // 3 seconds in milliseconds
+    
+    for (const entry of entries) {
+      // Create a unique key for this entry type
+      const entryKey = `${entry.bedId}-${entry.action}-${entry.data?.details || ''}`;
+      const entryTime = new Date(entry.timestamp).getTime();
+      
+      // Check if we have a similar entry within the last 3 seconds
+      const isDuplicate = deduplicated.some(existingEntry => {
+        const existingKey = `${existingEntry.bedId}-${existingEntry.action}-${existingEntry.data?.details || ''}`;
+        const existingTime = new Date(existingEntry.timestamp).getTime();
+        const timeDiff = Math.abs(entryTime - existingTime);
+        
+        return existingKey === entryKey && timeDiff <= DEDUP_WINDOW;
+      });
+      
+      // Only add if it's not a duplicate
+      if (!isDuplicate) {
+        deduplicated.push(entry);
+      }
+    }
+    
+    return deduplicated;
+  };
+
+  // Sort history by timestamp (newest first), deduplicate, and filter out legacy entries
+  const sortedHistory = deduplicateEntries([...historyData])
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .map(entry => ({ entry, actionDisplay: getActionDisplay(entry) }))
     .filter(({ actionDisplay }) => actionDisplay !== null);
